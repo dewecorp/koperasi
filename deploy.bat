@@ -28,7 +28,11 @@ git commit -m "%COMMIT_MSG%"
 
 echo.
 echo [4/4] Pushing to GitHub...
-git push origin main
+if not exist ".git\config" (
+    git remote add origin https://github.com/dewecorp/koperasi.git
+)
+git branch -M main
+git push -u origin main
 
 echo.
 echo [5/5] Creating backup zip (overwrite mode)...
