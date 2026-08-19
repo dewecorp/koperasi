@@ -1,0 +1,4 @@
+# Upload hanya boleh disajikan, tidak boleh dieksekusi sebagai skrip.
+<FilesMatch "\.(?i:php|phtml|php3|php4|php5|php7|phar|pht)$">
+  Require all denied
+</FilesMatch>

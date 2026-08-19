@@ -1,0 +1,16 @@
+# ============================================================
+# Koperasi Sekolah - root .htaccess
+# Berlaku bila docroot diarahkan ke ROOT project.
+# ============================================================
+RewriteEngine On
+
+# 1) Hilangkan index.php dari URL (301)
+RewriteCond %{THE_REQUEST} \s/+(.*/)?index\.php[\s?] [NC]
+RewriteRule ^(.*/)?index\.php$ /$1 [R=301,L,QSA]
+
+# 2) Hilangkan ekstensi .php dari URL (301)
+RewriteCond %{THE_REQUEST} \s/+(.*/)?([^.]+)\.php[\s?] [NC]
+RewriteRule ^(.*/)?([^.]+)\.php$ /$1$2 [R=301,L,QSA]
+
+# 3) Arahkan semua request ke folder public/
+RewriteRule ^(.*)$ public/$1 [L]
