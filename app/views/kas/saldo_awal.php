@@ -18,7 +18,7 @@
             </div>
             <div>
                 <label class="label">Nominal *</label>
-                <input type="number" name="nominal" class="input" min="0" step="0.01" value="<?= e((float)($saldoAwal['nominal'] ?? 0)) ?>" required>
+                <input type="text" name="nominal" class="input" inputmode="numeric" min="0" step="0.01" value="<?= e((float)($saldoAwal['nominal'] ?? 0)) ?>" required>
             </div>
             <div class="sm:col-span-2">
                 <label class="label">Keterangan</label>

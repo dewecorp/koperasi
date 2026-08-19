@@ -159,7 +159,7 @@ class App
             'password', 'bayar', 'export', 'print', 'rekap', 'history', 'restore',
             'change_password', 'change', 'download', 'view', 'upload', 'stok',
             'adjust', 'delete_att', 'pembayaran', 'penyesuaian', 'struk', 'delete_many',
-            'hapusTahunAjaran',
+            'hapusTahunAjaran', 'cariBarcode',
         ];
         if (!in_array($action, $allowed, true) || !method_exists($controller, $action)) {
             abort_notfound();

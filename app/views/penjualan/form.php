@@ -1,7 +1,7 @@
 <?php
 $produkData = [];
 foreach ($produk as $p) {
-    $produkData[] = ['id' => (int)$p['id'], 'nama' => $p['name'], 'kode' => $p['kode'], 'harga' => (float)$p['harga_jual'], 'stok' => (float)$p['stock'], 'satuan' => $p['satuan']];
+    $produkData[] = ['id' => (int)$p['id'], 'nama' => $p['name'], 'kode' => $p['kode'], 'barcode' => $p['barcode'] ?? '', 'harga' => (float)$p['harga_jual'], 'stok' => (float)$p['stock'], 'satuan' => $p['satuan']];
 }
 $tanggalForm = input('tanggal', date('Y-m-d'));
 ?>
@@ -36,6 +36,12 @@ $tanggalForm = input('tanggal', date('Y-m-d'));
                         <option value="kredit">Kredit</option>
                     </select>
                 </div>
+            </div>
+
+            <div class="flex items-center gap-2 bg-slate-50 border border-emerald-200 rounded-xl px-4 py-3">
+                <?= icon('printer', 'w-5 h-5 text-emerald-600') ?>
+                <input type="text" id="inputScan" class="input flex-1" placeholder="Scan barcode barang untuk tambah cepat..." autocomplete="off">
+                <span class="text-xs text-slate-400">Tekan Enter / gunakan scanner</span>
             </div>
 
             <div class="border border-slate-200 rounded-xl overflow-hidden">
@@ -80,12 +86,14 @@ $tanggalForm = input('tanggal', date('Y-m-d'));
 
     function rupiah(v) { return 'Rp ' + Number(v || 0).toLocaleString('id-ID'); }
 
+    function angka(v) { return Number(String(v).replace(/[^\d.-]/g, '')) || 0; }
+
     function hitungTotal() {
         var total = 0;
         document.querySelectorAll('#itemRows .row-item').forEach(function (row) {
-            var qty = parseFloat(row.querySelector('.i-qty').value) || 0;
-            var harga = parseFloat(row.querySelector('.i-harga').value) || 0;
-            var diskon = parseFloat(row.querySelector('.i-diskon').value) || 0;
+            var qty = angka(row.querySelector('.i-qty').value);
+            var harga = angka(row.querySelector('.i-harga').value);
+            var diskon = angka(row.querySelector('.i-diskon').value);
             var sub = Math.max(0, qty * harga - diskon);
             total += sub;
             row.querySelector('.i-sub').textContent = rupiah(sub);
@@ -105,8 +113,8 @@ $tanggalForm = input('tanggal', date('Y-m-d'));
         row.innerHTML =
             '<div class="col-span-4"><select name="product_id[]" class="input i-produk text-sm">' + opts + '</select></div>' +
             '<div class="col-span-1"><input type="number" name="qty[]" class="input i-qty text-sm" min="0.01" step="0.01" value="' + (pre.qty || '') + '"></div>' +
-            '<div class="col-span-2"><input type="number" name="harga[]" class="input i-harga text-sm" min="0" step="0.01" value="' + (pre.harga || '') + '"></div>' +
-            '<div class="col-span-2"><input type="number" name="diskon[]" class="input i-diskon text-sm" min="0" step="0.01" value="' + (pre.diskon || '') + '"></div>' +
+            '<div class="col-span-2"><input type="text" name="harga[]" class="input i-harga text-sm" inputmode="numeric" value="' + (pre.harga || '') + '"></div>' +
+            '<div class="col-span-2"><input type="text" name="diskon[]" class="input i-diskon text-sm" inputmode="numeric" value="' + (pre.diskon || '') + '"></div>' +
             '<div class="col-span-2 i-sub text-sm font-semibold text-right">Rp 0</div>' +
             '<div class="col-span-1 text-right"><button type="button" class="btn btn-ghost p-1.5 btn-hapus">' + '&times;' + '</button></div>';
 
@@ -137,6 +145,44 @@ $tanggalForm = input('tanggal', date('Y-m-d'));
         document.getElementById('selectCustomer').required = kredit;
         if (kredit) { document.getElementById('selectCustomer').focus(); }
     });
+
+    // ===== Scanner barcode: tambah barang ke keranjang =====
+    var inputScan = document.getElementById('inputScan');
+    if (inputScan) {
+        inputScan.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') e.preventDefault();
+        });
+        inputScan.addEventListener('change', function () {
+            var bc = this.value.trim();
+            if (bc === '') return;
+            var p = null;
+            for (var i = 0; i < PRODUK.length; i++) {
+                if (String(PRODUK[i].barcode) === bc) { p = PRODUK[i]; break; }
+            }
+            if (!p) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Barcode tidak ditemukan',
+                    text: 'Barang dengan barcode "' + bc + '" belum terdaftar. Tambahkan lewat menu Data Barang.',
+                    confirmButtonText: 'OK'
+                });
+            } else {
+                var existing = null;
+                document.querySelectorAll('#itemRows .row-item').forEach(function (row) {
+                    if (row.querySelector('.i-produk').value === String(p.id)) existing = row;
+                });
+                if (existing) {
+                    var qtyNow = angka(existing.querySelector('.i-qty').value) || 1;
+                    existing.querySelector('.i-qty').value = qtyNow + 1;
+                    hitungTotal();
+                } else {
+                    addRow({ product_id: p.id, qty: 1, harga: p.harga, diskon: '' });
+                }
+            }
+            this.value = '';
+            this.focus();
+        });
+    }
 
     // baris pertama
     addRow({});

@@ -76,7 +76,7 @@ $dibayar = (float)$hutang['total'] - (float)$sisa;
                 </div>
                 <div>
                     <label class="label">Nominal * (sisa <?= rupiah($sisa) ?>)</label>
-                    <input type="number" name="nominal" class="input" min="1" max="<?= e((float)$sisa) ?>" step="0.01" required>
+                    <input type="text" name="nominal" class="input" inputmode="numeric" min="1" max="<?= e((float)$sisa) ?>" step="0.01" required>
                 </div>
                 <div>
                     <label class="label">Keterangan</label>

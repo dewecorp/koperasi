@@ -189,7 +189,7 @@ function confirmCancelForm(ev, title) {
   return false;
 }
 
-/** Format rupiah pada input */
+/** Format rupiah pada input (selektornya dipakai sebagai fallback manual). */
 function formatInputRupiah(el) {
   if (!el) return;
   el.addEventListener('input', function () {
@@ -203,3 +203,55 @@ function formatInputRupiah(el) {
 function inputRupiahValue(el) {
   return parseInt(String(el.value).replace(/[^\d]/g, ''), 10) || 0;
 }
+
+/* ============ Digit grouping otomatis untuk semua input nominal ============ */
+(function () {
+  var MONEY_SELECTOR = [
+    'input[name="nominal"]',
+    'input[name="harga"]',
+    'input[name="harga[]"]',
+    'input[name="harga_beli"]',
+    'input[name="harga_jual"]',
+    'input[name="diskon"]',
+    'input[name="diskon[]"]',
+    'input[name="diskon_global"]',
+    'input[name="saldo"]',
+    'input[name="saldo_minimum_cash"]'
+  ].join(', ');
+
+  function moneyDigits(v) {
+    return String(v).replace(/[^\d]/g, '');
+  }
+
+  function formatMoney(el) {
+    var digits = moneyDigits(el.value);
+    el.dataset.raw = digits;
+    if (digits === '') { el.value = ''; return; }
+    el.value = Number(digits).toLocaleString('id-ID');
+  }
+
+  document.addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.matches && t.matches(MONEY_SELECTOR)) {
+      formatMoney(t);
+    }
+  });
+
+  // Sebelum submit, kembalikan nilai bersih (tanpa titik) supaya server menerima angka utuh.
+  document.addEventListener('submit', function (e) {
+    e.target.querySelectorAll(MONEY_SELECTOR).forEach(function (el) {
+      if (el.dataset.raw !== undefined) {
+        el.value = el.dataset.raw === '' ? '' : Number(el.dataset.raw).toFixed(0);
+      }
+    });
+  }, true);
+
+  // Input yang nilainya sudah terisi tetap diformat saat halaman siap.
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll(MONEY_SELECTOR).forEach(function (el) {
+      if (el.value !== '' && /^\d+$/.test(el.value) && el.value !== '0') {
+        formatMoney(el);
+      }
+    });
+  });
+})();

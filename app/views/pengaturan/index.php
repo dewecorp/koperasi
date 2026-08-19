@@ -45,7 +45,7 @@
 
             <div class="p-4 border border-slate-200 rounded-xl">
                 <label class="label">Batas Minimum Saldo Kas (indikator dashboard)</label>
-                <input type="number" name="saldo_minimum_cash" class="input" min="0" step="0.01" value="<?= e($set['saldo_minimum_cash']) ?>">
+                <input type="text" name="saldo_minimum_cash" class="input" inputmode="numeric" min="0" step="0.01" value="<?= e($set['saldo_minimum_cash']) ?>">
             </div>
 
             <div class="flex justify-end pt-2">

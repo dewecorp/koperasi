@@ -334,6 +334,45 @@ function get_tahun_ajaran_list(): array
     return $list;
 }
 
+/** Generate kode barang otomatis (BRG00001, unik, tidak pernah reset). */
+function kode_barang_otomatis(): string
+{
+    $pdo = db();
+    $pdo->prepare(
+        'INSERT INTO number_counters (prefix, tanggal, last_number) VALUES ("BRG", "1900-01-01", 1)
+         ON DUPLICATE KEY UPDATE last_number = last_number + 1'
+    )->execute();
+    $stmt = $pdo->prepare('SELECT last_number FROM number_counters WHERE prefix = "BRG" AND tanggal = "1900-01-01"');
+    $stmt->execute();
+    $n = (int)$stmt->fetchColumn();
+    return 'BRG' . str_pad((string)$n, 5, '0', STR_PAD_LEFT);
+}
+
+/** Digit cek EAN-13 (12 digit -> kembalikan 1 digit cek). */
+function ean13_check_digit(string $digits12): string
+{
+    $sum = 0;
+    for ($i = 0; $i < 12; $i++) {
+        $sum += (int)$digits12[$i] * ($i % 2 === 0 ? 1 : 3);
+    }
+    return (string)((10 - ($sum % 10)) % 10);
+}
+
+/** Generate barcode EAN-13 otomatis (awalan GS1 Indonesia 899, unik). */
+function barcode_otomatis(): string
+{
+    $pdo = db();
+    $pdo->prepare(
+        'INSERT INTO number_counters (prefix, tanggal, last_number) VALUES ("BAR", "1900-01-01", 1)
+         ON DUPLICATE KEY UPDATE last_number = last_number + 1'
+    )->execute();
+    $stmt = $pdo->prepare('SELECT last_number FROM number_counters WHERE prefix = "BAR" AND tanggal = "1900-01-01"');
+    $stmt->execute();
+    $n = (int)$stmt->fetchColumn();
+    $base = '899' . str_pad((string)$n, 9, '0', STR_PAD_LEFT); // 12 digit
+    return $base . ean13_check_digit($base);
+}
+
 /**
  * Pagination sederhana.
  * @return array{items:array,total:int,page:int,pages:int,perPage:int}

@@ -73,7 +73,7 @@ $noForm = input('no_form', '') !== 'batal';
         </div>
         <div>
             <label class="label">Nominal *</label>
-            <input type="number" name="nominal" class="input" min="1" step="0.01" value="<?= e(old('nominal')) ?>" required>
+            <input type="text" name="nominal" class="input" inputmode="numeric" min="1" step="0.01" value="<?= e(old('nominal')) ?>" required>
         </div>
         <div>
             <label class="label">Sumber / Darimana</label>

@@ -3,18 +3,21 @@ $isEdit = $barang !== null;
 $old = function (string $key, $default = '') use ($barang) {
     return old($key, $barang[$key] ?? $default);
 };
+$scanUrl = url('barang', ['action' => 'cariBarcode']);
 ?>
 <div class="max-w-3xl">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <form method="post" action="<?= url('barang', ['action' => 'store', 'id' => $isEdit ? $barang['id'] : null]) ?>" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <form method="post" action="<?= url('barang', ['action' => 'store', 'id' => $isEdit ? $barang['id'] : null]) ?>" id="formBarang" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <?= csrf_field() ?>
             <div>
-                <label class="label">Kode Barang *</label>
-                <input type="text" name="kode" class="input" value="<?= e($old('kode')) ?>" required>
+                <label class="label">Kode Barang<?= $isEdit ? '' : ' (otomatis)' ?> *</label>
+                <input type="text" name="kode" class="input" value="<?= e($old('kode')) ?>" placeholder="<?= $isEdit ? '' : 'Kosongkan = otomatis' ?>" <?= $isEdit ? 'required' : '' ?>>
+                <?php if (!$isEdit): ?><p class="text-xs text-slate-400 mt-1">Biarkan kosong untuk kode otomatis (BRG00001).</p><?php endif; ?>
             </div>
             <div>
-                <label class="label">Barcode</label>
-                <input type="text" name="barcode" class="input" value="<?= e($old('barcode')) ?>">
+                <label class="label">Barcode<?= $isEdit ? '' : ' (otomatis)' ?></label>
+                <input type="text" name="barcode" id="inputBarcode" class="input" value="<?= e($old('barcode')) ?>" placeholder="<?= $isEdit ? '' : 'Scan / biarkan kosong = otomatis' ?>" autofocus>
+                <p class="text-xs text-slate-400 mt-1"><?= $isEdit ? 'Barcode tetap disimpan. Scanner otomatis mencari barang yang sudah ada.' : 'Scan barcode: jika barang sudah ada, langsung dibuka untuk diubah. Jika belum ada, form ini mengisinya.' ?></p>
             </div>
             <div class="sm:col-span-2">
                 <label class="label">Nama Barang *</label>
@@ -35,11 +38,11 @@ $old = function (string $key, $default = '') use ($barang) {
             </div>
             <div>
                 <label class="label">Harga Beli *</label>
-                <input type="number" name="harga_beli" class="input" min="0" step="0.01" value="<?= e($old('harga_beli')) ?>" required>
+                <input type="text" name="harga_beli" class="input" inputmode="numeric" min="0" step="0.01" value="<?= e($old('harga_beli')) ?>" required>
             </div>
             <div>
                 <label class="label">Harga Jual *</label>
-                <input type="number" name="harga_jual" class="input" min="0" step="0.01" value="<?= e($old('harga_jual')) ?>" required>
+                <input type="text" name="harga_jual" class="input" inputmode="numeric" min="0" step="0.01" value="<?= e($old('harga_jual')) ?>" required>
             </div>
             <div>
                 <label class="label">Stok Awal</label>
@@ -75,3 +78,65 @@ $old = function (string $key, $default = '') use ($barang) {
         </form>
     </div>
 </div>
+
+<script>
+(function () {
+    var inputBarcode = document.getElementById('inputBarcode');
+    var isEdit = <?= $isEdit ? 'true' : 'false' ?>;
+    var scanUrl = <?= json_encode($scanUrl) ?>;
+    var userTyped = false;
+
+    // Deteksi input dari scanner (kirim cepat + Enter) vs ketikan manual.
+    var typingTimer = null;
+    inputBarcode.addEventListener('keydown', function () {
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(function () { userTyped = true; }, 500);
+    });
+
+    inputBarcode.addEventListener('change', function () {
+        var v = this.value.trim();
+        if (v === '') return;
+        var isScan = !userTyped || v.length >= 8;
+        userTyped = false;
+        if (!isScan) return;
+
+        fetch(scanUrl + '?barcode=' + encodeURIComponent(v))
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                if (res.found) {
+                    var p = res.produk;
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Barang sudah ada',
+                        text: p.kode + ' - ' + p.name + ' (stok ' + p.stock + ')',
+                        showCancelButton: true,
+                        confirmButtonText: 'Buka & Ubah',
+                        cancelButtonText: 'Tetap Baru',
+                        confirmButtonColor: '#059669'
+                    }).then(function (r) {
+                        if (r.isConfirmed) {
+                            window.location.href = '<?= url('barang', ['action' => 'edit']) ?>/' + p.id;
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Barang baru',
+                        text: 'Barcode tidak ditemukan. Silakan lengkapi data barang baru.',
+                        timer: 2500,
+                        showConfirmButton: false
+                    });
+                    document.querySelector('input[name="name"]').focus();
+                }
+            })
+            .catch(function () {
+                Swal.fire({ icon: 'error', title: 'Gagal', text: 'Tidak dapat memeriksa barcode.', confirmButtonText: 'OK' });
+            });
+    });
+
+    // Saat edit, isi nama otomatis disarankan fokus normal.
+    inputBarcode.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') e.preventDefault();
+    });
+})();
+</script>

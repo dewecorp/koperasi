@@ -73,7 +73,6 @@ class BarangController extends Controller
         }
 
         $errors = validate([
-            'kode' => 'required',
             'name' => 'required',
             'satuan' => 'required',
             'harga_beli' => 'numeric|min:0',
@@ -98,6 +97,21 @@ class BarangController extends Controller
         $supplierId = input('supplier_id', null) ?: null;
         $isActive = input('is_active', '1') === '1' ? 1 : 0;
 
+        // Kode otomatis bila dikosongkan
+        if ($kode === '' && !$id) {
+            $kode = kode_barang_otomatis();
+        }
+        // Barcode otomatis bila dikosongkan
+        if ($barcode === '' && !$id) {
+            $barcode = barcode_otomatis();
+        }
+
+        if ($kode === '') {
+            flash('error', 'Kode barang wajib diisi.');
+            flash_old($_POST);
+            redirect($id ? 'barang&action=edit&id=' . $id : 'barang&action=create');
+        }
+
         // Cek duplikasi kode
         $dup = $pdo->prepare('SELECT id FROM products WHERE kode = ? AND id <> ?');
         $dup->execute([$kode, $id ?? 0]);
@@ -105,6 +119,16 @@ class BarangController extends Controller
             flash('error', 'Kode barang "' . $kode . '" sudah digunakan.');
             flash_old($_POST);
             redirect($id ? 'barang&action=edit&id=' . $id : 'barang&action=create');
+        }
+        // Cek duplikasi barcode
+        if ($barcode !== '') {
+            $dupb = $pdo->prepare('SELECT id FROM products WHERE barcode = ? AND id <> ?');
+            $dupb->execute([$barcode, $id ?? 0]);
+            if ($dupb->fetch()) {
+                flash('error', 'Barcode "' . $barcode . '" sudah digunakan barang lain.');
+                flash_old($_POST);
+                redirect($id ? 'barang&action=edit&id=' . $id : 'barang&action=create');
+            }
         }
 
         $fin = new FinanceService();
@@ -140,6 +164,30 @@ class BarangController extends Controller
             flash_old($_POST);
             redirect($id ? 'barang&action=edit&id=' . $id : 'barang&action=create');
         }
+    }
+
+    /** Cari barang berdasarkan barcode (untuk dukungan scanner). */
+    public function cariBarcode(): void
+    {
+        $this->guard();
+        header('Content-Type: application/json; charset=utf-8');
+        $barcode = trim(input('barcode', ''));
+        if ($barcode === '') {
+            echo json_encode(['found' => false, 'message' => 'Barcode kosong.']);
+            exit;
+        }
+        $stmt = db()->prepare(
+            'SELECT id, kode, name, barcode, harga_jual, stock, satuan, is_active
+             FROM products WHERE barcode = ? LIMIT 1'
+        );
+        $stmt->execute([$barcode]);
+        $p = $stmt->fetch();
+        if ($p) {
+            echo json_encode(['found' => true, 'produk' => $p]);
+            exit;
+        }
+        echo json_encode(['found' => false, 'message' => 'Barang dengan barcode ini belum ada. Bisa ditambahkan sebagai barang baru.']);
+        exit;
     }
 
     public function edit(?string $id = null): void

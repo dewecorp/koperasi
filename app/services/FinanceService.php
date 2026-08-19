@@ -289,7 +289,7 @@ class FinanceService extends Model
 
             $this->execute(
                 'INSERT INTO transactions (no_transaksi, type, tahun_ajaran, tanggal, supplier_id, total, payment_method, keterangan, user_id)
-                 VALUES (?, "pembelian", ?, ?, ?, ?, ?, ?)',
+                 VALUES (?, "pembelian", ?, ?, ?, ?, ?, ?, ?)',
                 [$no, $tahunAjaran, $tanggal, $supplierId, $total, $metode, $keterangan, $this->uid()]
             );
             $txId = $this->lastId();
