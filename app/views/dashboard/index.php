@@ -20,7 +20,7 @@ window.chartSeriJual = <?= $seriJual ?>;
 window.chartKatLabels = <?= $katLabels ?>;
 window.chartKatNilai = <?= $katNilai ?>;
 </script>
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
     <?php foreach ($cards as $c): ?>
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
         <div class="flex items-start justify-between">
@@ -35,12 +35,6 @@ window.chartKatNilai = <?= $katNilai ?>;
     </div>
     <?php endforeach; ?>
 </div>
-
-<?php if ($saldoRendah): ?>
-<div class="mt-4 px-4 py-3 rounded-lg bg-amber-50 border border-amber-300 text-amber-800 text-sm flex items-center gap-2">
-    <?= icon('alert', 'w-5 h-5') ?> Saldo kas Anda di bawah batas minimum (<?= rupiah($saldoMinimum) ?>).
-</div>
-<?php endif; ?>
 
 <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">

@@ -10,12 +10,13 @@ class PengeluaranController extends Controller
         $this->guard(['Administrator', 'Bendahara']);
         $pdo = db();
 
+        $tahunAjaran = tahun_ajaran_aktif();
         $dari = input('dari', date('Y-m-01'));
         $sampai = input('sampai', date('Y-m-d'));
         $q = trim(input('q', ''));
 
-        $where = ['t.type = "pengeluaran"', 't.tanggal BETWEEN ? AND ?'];
-        $params = [$dari, $sampai];
+        $where = ['t.type = "pengeluaran"', 't.tahun_ajaran = ?', 't.tanggal BETWEEN ? AND ?'];
+        $params = [$tahunAjaran, $dari, $sampai];
         if ($q !== '') {
             $where[] = '(t.no_transaksi LIKE ? OR t.keterangan LIKE ? OR c.name LIKE ?)';
             $like = '%' . $q . '%';
@@ -39,6 +40,7 @@ class PengeluaranController extends Controller
         $this->render('pengeluaran/index', [
             'pageTitle' => 'Pengeluaran',
             'pg' => $pg,
+            'tahunAjaran' => $tahunAjaran,
             'dari' => $dari,
             'sampai' => $sampai,
             'q' => $q,
@@ -55,6 +57,7 @@ class PengeluaranController extends Controller
             redirect('pengeluaran');
         }
 
+        $tahunAjaran = input('tahun_ajaran', tahun_ajaran_aktif());
         $tanggal = input('tanggal', date('Y-m-d'));
         $kategoriId = (int)input('category_id', 0);
         $nominal = (float)input('nominal', 0);
@@ -75,7 +78,7 @@ class PengeluaranController extends Controller
 
         $fin = new FinanceService();
         try {
-            $txId = $fin->savePengeluaran($tanggal, $kategoriId, $nominal, $penerima, $keterangan);
+            $txId = $fin->savePengeluaran($tanggal, $kategoriId, $nominal, $penerima, $keterangan, $tahunAjaran);
             $att = save_attachment('transactions', $txId);
             if ($att['error']) {
                 flash('warning', 'Transaksi tersimpan, tetapi bukti gagal: ' . $att['error']);
@@ -205,5 +208,31 @@ class PengeluaranController extends Controller
             abort_notfound('Data pengeluaran tidak ditemukan.');
         }
         return $tx;
+    }
+
+    public function destroy(?string $id = null): void
+    {
+        $this->guard(['Administrator']);
+        if (!csrf_verify()) {
+            flash('error', 'Token keamanan tidak valid.');
+            redirect('pengeluaran');
+        }
+        $tx = $this->load($id);
+        $noTransaksi = $tx['no_transaksi'];
+
+        $pdo = db();
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare('DELETE FROM attachments WHERE related_type = "transactions" AND related_id = ?')->execute([$id]);
+            $pdo->prepare('DELETE FROM cash_transactions WHERE related_type = "transactions" AND related_id = ?')->execute([$id]);
+            $pdo->prepare('DELETE FROM transactions WHERE id = ?')->execute([$id]);
+            $pdo->commit();
+            audit_log('HAPUS PENGELUARAN', $noTransaksi);
+            flash('success', 'Pengeluaran berhasil dihapus.');
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            flash('error', 'Gagal menghapus: ' . $e->getMessage());
+        }
+        redirect('pengeluaran');
     }
 }

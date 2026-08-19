@@ -20,7 +20,8 @@ class KasController extends Controller
     {
         $this->guard(['Administrator']);
         $fin = new FinanceService();
-        $saldoAwal = $fin->saldoAwalRow();
+        $tahunAjaran = tahun_ajaran_aktif();
+        $saldoAwal = $fin->saldoAwalRow($tahunAjaran);
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!csrf_verify()) {
@@ -39,7 +40,7 @@ class KasController extends Controller
 
             try {
                 $sebelum = $saldoAwal ? $saldoAwal['nominal'] : 0;
-                $fin->setSaldoAwal($tanggal, $nominal, $keterangan);
+                $fin->setSaldoAwal($tanggal, $nominal, $keterangan, $tahunAjaran);
                 audit_log('UBAH SALDO AWAL', 'dari ' . rupiah($sebelum) . ' menjadi ' . rupiah($nominal));
                 flash('success', 'Saldo awal disimpan.');
             } catch (Throwable $e) {
@@ -50,14 +51,16 @@ class KasController extends Controller
 
         $this->render('kas/saldo_awal', [
             'pageTitle' => 'Saldo Awal',
+            'tahunAjaran' => $tahunAjaran,
             'saldoAwal' => $saldoAwal,
-            'saldoKas' => $fin->saldoKas(),
+            'saldoKas' => $fin->saldoKas(null, $tahunAjaran),
         ]);
     }
 
     private function bukuKasPage(): void
     {
         $fin = new FinanceService();
+        $tahunAjaran = tahun_ajaran_aktif();
         $range = input('range', 'tahun');
         $dari = '';
         $sampai = '';
@@ -83,13 +86,14 @@ class KasController extends Controller
                 $sampai = date('Y-12-31');
         }
 
-        $buku = $fin->bukuKas($dari, $sampai);
+        $buku = $fin->bukuKas($dari, $sampai, $tahunAjaran);
         // Kas masuk termasuk saldo awal (baris pembuka buku kas)
         $totMasuk = array_sum(array_map(function ($r) { return ($r['jenis'] === 'masuk' || $r['jenis'] === 'saldo_awal') ? $r['nominal'] : 0; }, $buku['rows']));
         $totKeluar = array_sum(array_map(function ($r) { return $r['jenis'] === 'keluar' ? $r['nominal'] : 0; }, $buku['rows']));
 
         $this->render('kas/buku_kas', [
             'pageTitle' => 'Buku Kas',
+            'tahunAjaran' => $tahunAjaran,
             'buku' => $buku,
             'range' => $range,
             'dari' => $dari,

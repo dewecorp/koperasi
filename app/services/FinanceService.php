@@ -21,16 +21,20 @@ class FinanceService extends Model
      * ============================================================ */
 
     /** Saldo kas sampai tanggal tertentu (default: semua sampai hari ini). */
-    public function saldoKas(?string $tanggalSampai = null): float
+    public function saldoKas(?string $tanggalSampai = null, ?string $tahunAjaran = null): float
     {
+        if ($tahunAjaran === null) {
+            $tahunAjaran = tahun_ajaran_aktif();
+        }
         $sql = "SELECT
                     COALESCE(SUM(CASE WHEN jenis='saldo_awal' AND status='AKTIF' THEN nominal END),0)
                     + COALESCE(SUM(CASE WHEN jenis='masuk'   AND status='AKTIF' THEN nominal END),0)
                     - COALESCE(SUM(CASE WHEN jenis='keluar'  AND status='AKTIF' THEN nominal END),0) AS saldo
-                FROM cash_transactions";
-        $params = [];
+                FROM cash_transactions
+                WHERE tahun_ajaran = ?";
+        $params = [$tahunAjaran];
         if ($tanggalSampai) {
-            $sql .= " WHERE tanggal <= ?";
+            $sql .= " AND tanggal <= ?";
             $params[] = $tanggalSampai;
         }
         $stmt = $this->pdo->prepare($sql);
@@ -38,36 +42,49 @@ class FinanceService extends Model
         return (float)$stmt->fetchColumn();
     }
 
-    public function totalMasuk(?string $dari, ?string $sampai): float
+    public function totalMasuk(?string $dari, ?string $sampai, ?string $tahunAjaran = null): float
     {
+        if ($tahunAjaran === null) {
+            $tahunAjaran = tahun_ajaran_aktif();
+        }
         return (float)$this->value(
-            'SELECT COALESCE(SUM(nominal),0) FROM cash_transactions WHERE jenis="masuk" AND status="AKTIF" AND tanggal BETWEEN ? AND ?',
-            [$dari, $sampai]
+            'SELECT COALESCE(SUM(nominal),0) FROM cash_transactions WHERE tahun_ajaran = ? AND jenis="masuk" AND status="AKTIF" AND tanggal BETWEEN ? AND ?',
+            [$tahunAjaran, $dari, $sampai]
         );
     }
 
-    public function totalKeluar(?string $dari, ?string $sampai): float
+    public function totalKeluar(?string $dari, ?string $sampai, ?string $tahunAjaran = null): float
     {
+        if ($tahunAjaran === null) {
+            $tahunAjaran = tahun_ajaran_aktif();
+        }
         return (float)$this->value(
-            'SELECT COALESCE(SUM(nominal),0) FROM cash_transactions WHERE jenis="keluar" AND status="AKTIF" AND tanggal BETWEEN ? AND ?',
-            [$dari, $sampai]
+            'SELECT COALESCE(SUM(nominal),0) FROM cash_transactions WHERE tahun_ajaran = ? AND jenis="keluar" AND status="AKTIF" AND tanggal BETWEEN ? AND ?',
+            [$tahunAjaran, $dari, $sampai]
         );
     }
 
     /** Nilai saldo awal saat ini (row tunggal jenis saldo_awal). */
-    public function saldoAwalRow(): ?array
+    public function saldoAwalRow(?string $tahunAjaran = null): ?array
     {
+        if ($tahunAjaran === null) {
+            $tahunAjaran = tahun_ajaran_aktif();
+        }
         return $this->one(
-            'SELECT * FROM cash_transactions WHERE jenis="saldo_awal" ORDER BY id DESC LIMIT 1'
+            'SELECT * FROM cash_transactions WHERE tahun_ajaran = ? AND jenis="saldo_awal" ORDER BY id DESC LIMIT 1',
+            [$tahunAjaran]
         );
     }
 
     /** Simpan/ubah saldo awal (satu baris). */
-    public function setSaldoAwal(string $tanggal, float $nominal, string $keterangan = ''): void
+    public function setSaldoAwal(string $tanggal, float $nominal, string $keterangan = '', ?string $tahunAjaran = null): void
     {
+        if ($tahunAjaran === null) {
+            $tahunAjaran = tahun_ajaran_aktif();
+        }
         $this->pdo->beginTransaction();
         try {
-            $existing = $this->saldoAwalRow();
+            $existing = $this->saldoAwalRow($tahunAjaran);
             if ($existing) {
                 $this->execute(
                     'UPDATE cash_transactions SET tanggal = ?, nominal = ?, keterangan = ?, updated_at = NOW() WHERE id = ?',
@@ -75,9 +92,9 @@ class FinanceService extends Model
                 );
             } else {
                 $this->execute(
-                    'INSERT INTO cash_transactions (tanggal, no_transaksi, jenis, kategori, nominal, keterangan, status, user_id)
-                     VALUES (?, ?, "saldo_awal", "Saldo Awal", ?, ?, "AKTIF", ?)',
-                    [$tanggal, 'SA-AWAL', $nominal, $keterangan, $this->uid()]
+                    'INSERT INTO cash_transactions (tahun_ajaran, tanggal, no_transaksi, jenis, kategori, nominal, keterangan, status, user_id)
+                     VALUES (?, ?, ?, "saldo_awal", "Saldo Awal", ?, ?, "AKTIF", ?)',
+                    [$tahunAjaran, $tanggal, 'SA-AWAL', $nominal, $keterangan, $this->uid()]
                 );
             }
             $this->pdo->commit();
@@ -88,15 +105,18 @@ class FinanceService extends Model
     }
 
     /** Buku kas lengkap dengan saldo berjalan. */
-    public function bukuKas(string $dari, string $sampai): array
+    public function bukuKas(string $dari, string $sampai, ?string $tahunAjaran = null): array
     {
+        if ($tahunAjaran === null) {
+            $tahunAjaran = tahun_ajaran_aktif();
+        }
         // Seluruh mutasi aktif sampai akhir periode (termasuk saldo awal),
         // diurutkan sesuai kejadian untuk saldo berjalan yang benar.
         $all = $this->all(
             'SELECT * FROM cash_transactions
-             WHERE status="AKTIF" AND tanggal <= ?
+             WHERE tahun_ajaran = ? AND status="AKTIF" AND tanggal <= ?
              ORDER BY tanggal, id',
-            [$sampai]
+            [$tahunAjaran, $sampai]
         );
 
         $saldoAwalNominal = 0;
@@ -168,10 +188,13 @@ class FinanceService extends Model
     /**
      * @param array $items [['product_id'=>, 'qty'=>, 'harga'=>, 'diskon'=>]]
      */
-    public function savePenjualan(string $tanggal, ?int $customerId, string $metode, array $items, string $keterangan = ''): int
+    public function savePenjualan(string $tanggal, ?int $customerId, string $metode, array $items, string $keterangan = '', string $tahunAjaran = ''): int
     {
         if (empty($items)) {
             throw new RuntimeException('Transaksi tanpa detail barang.');
+        }
+        if ($tahunAjaran === '') {
+            $tahunAjaran = tahun_ajaran_aktif();
         }
 
         $this->pdo->beginTransaction();
@@ -183,9 +206,9 @@ class FinanceService extends Model
             }
 
             $this->execute(
-                'INSERT INTO transactions (no_transaksi, type, tanggal, customer_id, total, payment_method, keterangan, user_id)
-                 VALUES (?, "penjualan", ?, ?, ?, ?, ?, ?)',
-                [$no, $tanggal, $customerId, $total, $metode, $keterangan, $this->uid()]
+                'INSERT INTO transactions (no_transaksi, type, tahun_ajaran, tanggal, customer_id, total, payment_method, keterangan, user_id)
+                 VALUES (?, "penjualan", ?, ?, ?, ?, ?, ?, ?)',
+                [$no, $tahunAjaran, $tanggal, $customerId, $total, $metode, $keterangan, $this->uid()]
             );
             $txId = $this->lastId();
 
@@ -213,25 +236,25 @@ class FinanceService extends Model
                 }
 
                 $this->execute(
-                    'INSERT INTO stock_movements (product_id, tanggal, no_referensi, type, qty, keterangan, status, user_id)
-                     VALUES (?, ?, ?, "keluar", ?, ?, "AKTIF", ?)',
-                    [$pid, $tanggal, $no, $qty, 'Penjualan ' . $no, $this->uid()]
+                    'INSERT INTO stock_movements (product_id, tahun_ajaran, tanggal, no_referensi, type, qty, keterangan, status, user_id)
+                     VALUES (?, ?, ?, ?, "keluar", ?, ?, "AKTIF", ?)',
+                    [$pid, $tahunAjaran, $tanggal, $no, $qty, 'Penjualan ' . $no, $this->uid()]
                 );
                 $this->recalcStok($pid);
             }
 
             if ($metode === 'tunai') {
                 $this->execute(
-                    'INSERT INTO cash_transactions (tanggal, no_transaksi, jenis, kategori, nominal, keterangan, status, related_type, related_id, user_id)
-                     VALUES (?, ?, "masuk", "Penjualan", ?, ?, "AKTIF", "transactions", ?, ?)',
-                    [$tanggal, $no, $total, 'Penjualan tunai ' . $no, $txId, $this->uid()]
+                    'INSERT INTO cash_transactions (tahun_ajaran, tanggal, no_transaksi, jenis, kategori, nominal, keterangan, status, related_type, related_id, user_id)
+                     VALUES (?, ?, ?, "masuk", "Penjualan", ?, ?, "AKTIF", "transactions", ?, ?)',
+                    [$tahunAjaran, $tanggal, $no, $total, 'Penjualan tunai ' . $no, $txId, $this->uid()]
                 );
             } else {
                 // Kredit -> piutang
                 $this->execute(
-                    'INSERT INTO receivables (customer_id, transaction_id, tanggal, no_transaksi, total, status)
-                     VALUES (?, ?, ?, ?, ?, "AKTIF")',
-                    [$customerId, $txId, $tanggal, $no, $total]
+                    'INSERT INTO receivables (customer_id, transaction_id, tahun_ajaran, tanggal, no_transaksi, total, status)
+                     VALUES (?, ?, ?, ?, ?, ?, "AKTIF")',
+                    [$customerId, $txId, $tahunAjaran, $tanggal, $no, $total]
                 );
             }
 
@@ -247,10 +270,13 @@ class FinanceService extends Model
      * PEMBELIAN
      * ============================================================ */
 
-    public function savePembelian(string $tanggal, ?int $supplierId, string $metode, array $items, string $keterangan = ''): int
+    public function savePembelian(string $tanggal, ?int $supplierId, string $metode, array $items, string $keterangan = '', string $tahunAjaran = ''): int
     {
         if (empty($items)) {
             throw new RuntimeException('Transaksi tanpa detail barang.');
+        }
+        if ($tahunAjaran === '') {
+            $tahunAjaran = tahun_ajaran_aktif();
         }
 
         $this->pdo->beginTransaction();
@@ -262,9 +288,9 @@ class FinanceService extends Model
             }
 
             $this->execute(
-                'INSERT INTO transactions (no_transaksi, type, tanggal, supplier_id, total, payment_method, keterangan, user_id)
+                'INSERT INTO transactions (no_transaksi, type, tahun_ajaran, tanggal, supplier_id, total, payment_method, keterangan, user_id)
                  VALUES (?, "pembelian", ?, ?, ?, ?, ?, ?)',
-                [$no, $tanggal, $supplierId, $total, $metode, $keterangan, $this->uid()]
+                [$no, $tahunAjaran, $tanggal, $supplierId, $total, $metode, $keterangan, $this->uid()]
             );
             $txId = $this->lastId();
 
@@ -281,9 +307,9 @@ class FinanceService extends Model
                 );
 
                 $this->execute(
-                    'INSERT INTO stock_movements (product_id, tanggal, no_referensi, type, qty, keterangan, status, user_id)
-                     VALUES (?, ?, ?, "masuk", ?, ?, "AKTIF", ?)',
-                    [$pid, $tanggal, $no, $qty, 'Pembelian ' . $no, $this->uid()]
+                    'INSERT INTO stock_movements (product_id, tahun_ajaran, tanggal, no_referensi, type, qty, keterangan, status, user_id)
+                     VALUES (?, ?, ?, ?, "masuk", ?, ?, "AKTIF", ?)',
+                    [$pid, $tahunAjaran, $tanggal, $no, $qty, 'Pembelian ' . $no, $this->uid()]
                 );
                 $this->recalcStok($pid);
             }
@@ -291,15 +317,15 @@ class FinanceService extends Model
             if ($metode === 'tunai') {
                 $this->checkSaldoCukup($total);
                 $this->execute(
-                    'INSERT INTO cash_transactions (tanggal, no_transaksi, jenis, kategori, nominal, keterangan, status, related_type, related_id, user_id)
-                     VALUES (?, ?, "keluar", "Pembelian", ?, ?, "AKTIF", "transactions", ?, ?)',
-                    [$tanggal, $no, $total, 'Pembelian tunai ' . $no, $txId, $this->uid()]
+                    'INSERT INTO cash_transactions (tahun_ajaran, tanggal, no_transaksi, jenis, kategori, nominal, keterangan, status, related_type, related_id, user_id)
+                     VALUES (?, ?, ?, "keluar", "Pembelian", ?, ?, "AKTIF", "transactions", ?, ?)',
+                    [$tahunAjaran, $tanggal, $no, $total, 'Pembelian tunai ' . $no, $txId, $this->uid()]
                 );
             } else {
                 $this->execute(
-                    'INSERT INTO payables (supplier_id, transaction_id, tanggal, no_transaksi, total, status)
-                     VALUES (?, ?, ?, ?, ?, "AKTIF")',
-                    [$supplierId, $txId, $tanggal, $no, $total]
+                    'INSERT INTO payables (supplier_id, transaction_id, tahun_ajaran, tanggal, no_transaksi, total, status)
+                     VALUES (?, ?, ?, ?, ?, ?, "AKTIF")',
+                    [$supplierId, $txId, $tahunAjaran, $tanggal, $no, $total]
                 );
             }
 
@@ -315,22 +341,25 @@ class FinanceService extends Model
      * PEMASUKAN & PENGELUARAN
      * ============================================================ */
 
-    public function savePemasukan(string $tanggal, int $kategoriId, float $nominal, string $sumber, string $keterangan): int
+    public function savePemasukan(string $tanggal, int $kategoriId, float $nominal, string $sumber, string $keterangan, string $tahunAjaran = ''): int
     {
+        if ($tahunAjaran === '') {
+            $tahunAjaran = tahun_ajaran_aktif();
+        }
         $this->pdo->beginTransaction();
         try {
             $no = nomor_transaksi('KM', $tanggal);
             $this->execute(
-                'INSERT INTO transactions (no_transaksi, type, tanggal, category_id, total, keterangan, user_id)
-                 VALUES (?, "pemasukan", ?, ?, ?, ?, ?)',
-                [$no, $tanggal, $kategoriId, $nominal, $keterangan, $this->uid()]
+                'INSERT INTO transactions (no_transaksi, type, tahun_ajaran, tanggal, category_id, total, keterangan, user_id)
+                 VALUES (?, "pemasukan", ?, ?, ?, ?, ?, ?)',
+                [$no, $tahunAjaran, $tanggal, $kategoriId, $nominal, $keterangan, $this->uid()]
             );
             $txId = $this->lastId();
 
             $this->execute(
-                'INSERT INTO cash_transactions (tanggal, no_transaksi, jenis, kategori, nominal, keterangan, status, related_type, related_id, user_id)
-                 VALUES (?, ?, "masuk", ?, ?, ?, "AKTIF", "transactions", ?, ?)',
-                [$tanggal, $no, $sumber, $nominal, $keterangan, $txId, $this->uid()]
+                'INSERT INTO cash_transactions (tahun_ajaran, tanggal, no_transaksi, jenis, kategori, nominal, keterangan, status, related_type, related_id, user_id)
+                 VALUES (?, ?, ?, "masuk", ?, ?, ?, "AKTIF", "transactions", ?, ?)',
+                [$tahunAjaran, $tanggal, $no, $sumber, $nominal, $keterangan, $txId, $this->uid()]
             );
 
             $this->pdo->commit();
@@ -341,24 +370,27 @@ class FinanceService extends Model
         }
     }
 
-    public function savePengeluaran(string $tanggal, int $kategoriId, float $nominal, string $penerima, string $keterangan): int
+    public function savePengeluaran(string $tanggal, int $kategoriId, float $nominal, string $penerima, string $keterangan, string $tahunAjaran = ''): int
     {
+        if ($tahunAjaran === '') {
+            $tahunAjaran = tahun_ajaran_aktif();
+        }
         $this->pdo->beginTransaction();
         try {
             $this->checkSaldoCukup($nominal);
 
             $no = nomor_transaksi('KK', $tanggal);
             $this->execute(
-                'INSERT INTO transactions (no_transaksi, type, tanggal, category_id, total, keterangan, user_id)
-                 VALUES (?, "pengeluaran", ?, ?, ?, ?, ?)',
-                [$no, $tanggal, $kategoriId, $nominal, $keterangan, $this->uid()]
+                'INSERT INTO transactions (no_transaksi, type, tahun_ajaran, tanggal, category_id, total, keterangan, user_id)
+                 VALUES (?, "pengeluaran", ?, ?, ?, ?, ?, ?)',
+                [$no, $tahunAjaran, $tanggal, $kategoriId, $nominal, $keterangan, $this->uid()]
             );
             $txId = $this->lastId();
 
             $this->execute(
-                'INSERT INTO cash_transactions (tanggal, no_transaksi, jenis, kategori, nominal, keterangan, status, related_type, related_id, user_id)
-                 VALUES (?, ?, "keluar", ?, ?, ?, "AKTIF", "transactions", ?, ?)',
-                [$tanggal, $no, $penerima, $nominal, $keterangan, $txId, $this->uid()]
+                'INSERT INTO cash_transactions (tahun_ajaran, tanggal, no_transaksi, jenis, kategori, nominal, keterangan, status, related_type, related_id, user_id)
+                 VALUES (?, ?, ?, "keluar", ?, ?, ?, "AKTIF", "transactions", ?, ?)',
+                [$tahunAjaran, $tanggal, $no, $penerima, $nominal, $keterangan, $txId, $this->uid()]
             );
 
             $this->pdo->commit();
@@ -411,8 +443,11 @@ class FinanceService extends Model
         return max(0, (float)$row['total'] - $dibayar);
     }
 
-    public function bayarPiutang(int $receivableId, string $tanggal, float $nominal, string $keterangan = ''): int
+    public function bayarPiutang(int $receivableId, string $tanggal, float $nominal, string $keterangan = '', string $tahunAjaran = ''): int
     {
+        if ($tahunAjaran === '') {
+            $tahunAjaran = tahun_ajaran_aktif();
+        }
         $this->pdo->beginTransaction();
         try {
             $sisa = $this->piutangSisa($receivableId);
@@ -432,9 +467,9 @@ class FinanceService extends Model
             $payId = $this->lastId();
 
             $this->execute(
-                'INSERT INTO cash_transactions (tanggal, no_transaksi, jenis, kategori, nominal, keterangan, status, related_type, related_id, user_id)
-                 VALUES (?, ?, "masuk", "Pembayaran Piutang", ?, ?, "AKTIF", "receivable_payments", ?, ?)',
-                [$tanggal, $no, $nominal, $keterangan, $payId, $this->uid()]
+                'INSERT INTO cash_transactions (tahun_ajaran, tanggal, no_transaksi, jenis, kategori, nominal, keterangan, status, related_type, related_id, user_id)
+                 VALUES (?, ?, ?, "masuk", "Pembayaran Piutang", ?, ?, "AKTIF", "receivable_payments", ?, ?)',
+                [$tahunAjaran, $tanggal, $no, $nominal, $keterangan, $payId, $this->uid()]
             );
 
             $this->pdo->commit();
@@ -445,8 +480,11 @@ class FinanceService extends Model
         }
     }
 
-    public function bayarHutang(int $payableId, string $tanggal, float $nominal, string $keterangan = ''): int
+    public function bayarHutang(int $payableId, string $tanggal, float $nominal, string $keterangan = '', string $tahunAjaran = ''): int
     {
+        if ($tahunAjaran === '') {
+            $tahunAjaran = tahun_ajaran_aktif();
+        }
         $this->pdo->beginTransaction();
         try {
             $sisa = $this->hutangSisa($payableId);
@@ -467,9 +505,9 @@ class FinanceService extends Model
             $payId = $this->lastId();
 
             $this->execute(
-                'INSERT INTO cash_transactions (tanggal, no_transaksi, jenis, kategori, nominal, keterangan, status, related_type, related_id, user_id)
-                 VALUES (?, ?, "keluar", "Pembayaran Hutang", ?, ?, "AKTIF", "payable_payments", ?, ?)',
-                [$tanggal, $no, $nominal, $keterangan, $payId, $this->uid()]
+                'INSERT INTO cash_transactions (tahun_ajaran, tanggal, no_transaksi, jenis, kategori, nominal, keterangan, status, related_type, related_id, user_id)
+                 VALUES (?, ?, ?, "keluar", "Pembayaran Hutang", ?, ?, "AKTIF", "payable_payments", ?, ?)',
+                [$tahunAjaran, $tanggal, $no, $nominal, $keterangan, $payId, $this->uid()]
             );
 
             $this->pdo->commit();

@@ -9,11 +9,12 @@ class HutangController extends Controller
     {
         $this->guard(['Administrator', 'Bendahara']);
         $pdo = db();
+        $tahunAjaran = tahun_ajaran_aktif();
         $q = trim(input('q', ''));
         $status = input('status', '');
 
-        $where = ['p.status = "AKTIF"'];
-        $params = [];
+        $where = ['p.status = "AKTIF"', 'p.tahun_ajaran = ?'];
+        $params = [$tahunAjaran];
         if ($q !== '') {
             $where[] = '(s.name LIKE ? OR p.no_transaksi LIKE ?)';
             $like = '%' . $q . '%';
@@ -45,6 +46,7 @@ class HutangController extends Controller
         $this->render('hutang/index', [
             'pageTitle' => 'Hutang',
             'pg' => $pg,
+            'tahunAjaran' => $tahunAjaran,
             'q' => $q,
             'status' => $status,
         ]);
@@ -80,6 +82,7 @@ class HutangController extends Controller
             redirect('hutang&action=show&id=' . $id);
         }
         $hutang = $this->load($id);
+        $tahunAjaran = input('tahun_ajaran', tahun_ajaran_aktif());
         $tanggal = input('tanggal', date('Y-m-d'));
         $nominal = (float)input('nominal', 0);
         $keterangan = trim(input('keterangan', ''));
@@ -91,7 +94,7 @@ class HutangController extends Controller
         }
 
         try {
-            (new FinanceService())->bayarHutang((int)$id, $tanggal, $nominal, $keterangan);
+            (new FinanceService())->bayarHutang((int)$id, $tanggal, $nominal, $keterangan, $tahunAjaran);
             audit_log('BAYAR HUTANG', $hutang['no_transaksi'] . ' ' . rupiah($nominal));
             flash('success', 'Pembayaran hutang dicatat. Kas berkurang.');
         } catch (Throwable $e) {
@@ -193,5 +196,30 @@ class HutangController extends Controller
             abort_notfound('Hutang tidak ditemukan.');
         }
         return $row;
+    }
+
+    public function destroy(?string $id = null): void
+    {
+        $this->guard(['Administrator']);
+        if (!csrf_verify()) {
+            flash('error', 'Token keamanan tidak valid.');
+            redirect('hutang');
+        }
+        $hutang = $this->load($id);
+        $noTransaksi = $hutang['no_transaksi'];
+
+        $pdo = db();
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare('DELETE FROM payable_payments WHERE payable_id = ?')->execute([$id]);
+            $pdo->prepare('DELETE FROM payables WHERE id = ?')->execute([$id]);
+            $pdo->commit();
+            audit_log('HAPUS HUTANG', $noTransaksi);
+            flash('success', 'Hutang berhasil dihapus.');
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            flash('error', 'Gagal menghapus: ' . $e->getMessage());
+        }
+        redirect('hutang');
     }
 }

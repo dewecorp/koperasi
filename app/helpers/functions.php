@@ -316,6 +316,24 @@ function setting(string $key, string $default = ''): string
     return $cache[$key];
 }
 
+/** Ambil tahun ajaran aktif (format: 2024/2025). */
+function tahun_ajaran_aktif(): string
+{
+    return setting('tahun_ajaran_aktif', date('Y') . '/' . (date('Y') + 1));
+}
+
+/** Ambil daftar tahun ajaran (3 tahun ke depan + 1 tahun lalu). */
+function get_tahun_ajaran_list(): array
+{
+    $currentYear = (int)date('Y');
+    $list = [];
+    for ($i = -1; $i <= 3; $i++) {
+        $y = $currentYear + $i;
+        $list[] = "$y/" . ($y + 1);
+    }
+    return $list;
+}
+
 /**
  * Pagination sederhana.
  * @return array{items:array,total:int,page:int,pages:int,perPage:int}

@@ -143,6 +143,7 @@ CREATE TABLE transactions (
   id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   no_transaksi   VARCHAR(30)     NOT NULL UNIQUE,
   type           ENUM('penjualan','pembelian','pemasukan','pengeluaran') NOT NULL,
+  tahun_ajaran   VARCHAR(9)      NOT NULL,
   tanggal        DATE            NOT NULL,
   customer_id    BIGINT UNSIGNED NULL,
   supplier_id    BIGINT UNSIGNED NULL,
@@ -159,6 +160,7 @@ CREATE TABLE transactions (
   updated_at     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_transactions_type (type),
+  KEY idx_transactions_tahun_ajaran (tahun_ajaran),
   KEY idx_transactions_tanggal (tanggal),
   KEY idx_transactions_status (status),
   KEY idx_transactions_customer (customer_id),
@@ -192,6 +194,7 @@ CREATE TABLE transaction_details (
 -- jenis: saldo_awal | masuk | keluar
 CREATE TABLE cash_transactions (
   id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  tahun_ajaran  VARCHAR(9)      NOT NULL,
   tanggal       DATE            NOT NULL,
   no_transaksi  VARCHAR(30)     NOT NULL UNIQUE,
   jenis         ENUM('saldo_awal','masuk','keluar') NOT NULL,
@@ -205,6 +208,7 @@ CREATE TABLE cash_transactions (
   created_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
+  KEY idx_cash_tahun_ajaran (tahun_ajaran),
   KEY idx_cash_tanggal (tanggal),
   KEY idx_cash_status (status),
   KEY idx_cash_jenis (jenis),
@@ -218,6 +222,7 @@ CREATE TABLE receivables (
   id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   customer_id    BIGINT UNSIGNED NOT NULL,
   transaction_id BIGINT UNSIGNED NULL,
+  tahun_ajaran   VARCHAR(9)      NOT NULL,
   tanggal        DATE            NOT NULL,
   no_transaksi   VARCHAR(30)     NOT NULL UNIQUE,
   total          DECIMAL(15,2)   NOT NULL DEFAULT 0,
@@ -227,6 +232,7 @@ CREATE TABLE receivables (
   updated_at     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_receivables_customer (customer_id),
+  KEY idx_receivables_tahun_ajaran (tahun_ajaran),
   KEY idx_receivables_status (status),
   CONSTRAINT fk_receivables_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT fk_receivables_transaction FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE SET NULL ON UPDATE CASCADE
@@ -255,6 +261,7 @@ CREATE TABLE payables (
   id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   supplier_id    BIGINT UNSIGNED NOT NULL,
   transaction_id BIGINT UNSIGNED NULL,
+  tahun_ajaran   VARCHAR(9)      NOT NULL,
   tanggal        DATE            NOT NULL,
   no_transaksi   VARCHAR(30)     NOT NULL UNIQUE,
   total          DECIMAL(15,2)   NOT NULL DEFAULT 0,
@@ -264,6 +271,7 @@ CREATE TABLE payables (
   updated_at     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_payables_supplier (supplier_id),
+  KEY idx_payables_tahun_ajaran (tahun_ajaran),
   KEY idx_payables_status (status),
   CONSTRAINT fk_payables_supplier FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT fk_payables_transaction FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE SET NULL ON UPDATE CASCADE
@@ -291,6 +299,7 @@ CREATE TABLE payable_payments (
 CREATE TABLE stock_movements (
   id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   product_id   BIGINT UNSIGNED NOT NULL,
+  tahun_ajaran VARCHAR(9)      NOT NULL,
   tanggal      DATE            NOT NULL,
   no_referensi VARCHAR(30)     NULL,
   type         ENUM('masuk','keluar','penyesuaian') NOT NULL,
@@ -302,6 +311,7 @@ CREATE TABLE stock_movements (
   updated_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_stock_product (product_id),
+  KEY idx_stock_tahun_ajaran (tahun_ajaran),
   KEY idx_stock_tanggal (tanggal),
   KEY idx_stock_status (status),
   CONSTRAINT fk_stock_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT ON UPDATE CASCADE
@@ -311,6 +321,7 @@ CREATE TABLE stock_movements (
 -- Modal koperasi (terpisah dari operasional)
 CREATE TABLE capital_transactions (
   id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  tahun_ajaran VARCHAR(9)      NOT NULL,
   tanggal      DATE            NOT NULL,
   no_transaksi VARCHAR(30)     NOT NULL UNIQUE,
   type         ENUM('modal_awal','tambahan','pengurangan') NOT NULL,
@@ -321,6 +332,7 @@ CREATE TABLE capital_transactions (
   created_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
+  KEY idx_capital_tahun_ajaran (tahun_ajaran),
   KEY idx_capital_status (status)
 ) ENGINE=InnoDB;
 

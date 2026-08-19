@@ -39,9 +39,9 @@ $noForm = input('no_form', '') !== 'batal';
                                 <a href="<?= url('pemasukan', ['action' => 'edit', 'id' => $t['id']]) ?>" class="btn btn-ghost p-1.5" title="Ubah"><?= icon('edit', 'w-4 h-4') ?></a>
                             <?php endif; ?>
                             <?php if (has_role('Administrator') && $t['status'] === 'AKTIF'): ?>
-                                <form method="post" action="<?= url('pemasukan', ['action' => 'cancel', 'id' => $t['id']]) ?>" class="inline">
+                                <form method="post" action="<?= url('pemasukan', ['action' => 'destroy', 'id' => $t['id']]) ?>" class="inline">
                                     <?= csrf_field() ?>
-                                    <button type="submit" class="btn btn-ghost p-1.5 text-red-600" onclick="return confirmCancelForm(event, 'Batalkan pemasukan?')" title="Hapus (Batalkan)"><?= icon('trash', 'w-4 h-4') ?></button>
+                                    <button type="submit" class="btn btn-ghost p-1.5 text-red-600" onclick="return appConfirmSubmit(event, 'Hapus pemasukan ini? Data tidak bisa dikembalikan.', 'Hapus')" title="Hapus"><?= icon('trash', 'w-4 h-4') ?></button>
                                 </form>
                             <?php endif; ?>
                         </div>

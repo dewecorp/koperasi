@@ -35,7 +35,9 @@ $navGroups = [
     ],
     'Transaksi' => [
         ['penjualan', 'penjualan', 'cart', 'Penjualan'],
+        ['penjualan', 'penjualan&action=history', 'history', 'Riwayat Penjualan'],
         ['pembelian', 'pembelian', 'package', 'Pembelian'],
+        ['pembelian', 'pembelian&action=history', 'history', 'Riwayat Pembelian'],
         ['pemasukan', 'pemasukan', 'trending-up', 'Pemasukan Lain'],
         ['pengeluaran', 'pengeluaran', 'trending-down', 'Pengeluaran'],
         ['piutang', 'piutang', 'wallet', 'Piutang'],
@@ -71,7 +73,6 @@ $navGroups = [
 $navAdmin = [
     'Master Data' => [
         ['profil', 'profil', 'school', 'Profil Koperasi'],
-        ['pengurus', 'pengurus', 'account-tie', 'Pengurus'],
         ['pengguna', 'pengguna', 'account-cog', 'Pengguna'],
     ],
     'Pengaturan' => [
@@ -97,24 +98,24 @@ if (has_role('Administrator')) {
 <body class="bg-slate-100 text-slate-800 flex flex-col min-h-screen">
 
 <!-- ======================= SIDEBAR ======================= -->
-<div id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-slate-900 text-slate-200 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 flex flex-col">
+<div id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-emerald-600 text-emerald-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 flex flex-col">
     <!-- Sticky Header -->
-    <div class="flex items-center gap-3 px-5 py-4 border-b border-slate-800 shrink-0 sticky top-0 bg-slate-900 z-10">
+    <div class="flex items-center gap-3 px-5 py-4 border-b border-emerald-700 shrink-0 sticky top-0 bg-emerald-600 z-10">
         <?php if (!empty($profile['logo']) && file_exists(UPLOAD_DIR . '/' . $profile['logo'])): ?>
-            <img src="<?= asset('uploads/' . e($profile['logo'])) ?>" class="h-10 w-10 rounded-full object-cover" alt="logo">
+            <img src="<?= asset('uploads/' . e($profile['logo'])) ?>" class="h-10 w-10 object-cover drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]" alt="logo">
         <?php else: ?>
-            <div class="h-10 w-10 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white"><?= e(mb_substr($profile['nama_koperasi'] ?? 'KS', 0, 2)) ?></div>
+            <div class="h-10 w-10 rounded-full bg-emerald-700 flex items-center justify-center font-bold text-white"><?= e(mb_substr($profile['nama_koperasi'] ?? 'KS', 0, 2)) ?></div>
         <?php endif; ?>
         <div>
-            <div class="font-semibold text-sm leading-tight"><?= e($profile['nama_koperasi'] ?? APP_NAME) ?></div>
-            <div class="text-xs text-slate-400 truncate"><?= e($profile['nama_sekolah'] ?? '') ?></div>
+            <div class="font-semibold text-sm leading-tight text-white"><?= e($profile['nama_koperasi'] ?? APP_NAME) ?></div>
+            <div class="text-xs text-emerald-200 truncate"><?= e($profile['nama_sekolah'] ?? '') ?></div>
         </div>
     </div>
 
     <!-- Scrollable Navigation -->
     <nav class="py-3 overflow-y-auto flex-1">
         <?php foreach ($navGroups as $group => $items): ?>
-            <div class="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500"><?= e($group) ?></div>
+            <div class="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-300"><?= e($group) ?></div>
             <?php foreach ($items as $item): [$page, $href, $icon, $label] = $item; ?>
                 <?php
                 $active = false;
@@ -143,17 +144,17 @@ if (has_role('Administrator')) {
                 }
                 ?>
                 <a href="<?= url($hrefPage, $hrefParams) ?>"
-                   class="flex items-center gap-3 mx-2 my-0.5 px-3 py-2 rounded-lg text-sm <?= $active ? 'bg-emerald-600 text-white' : 'hover:bg-slate-800 hover:text-white' ?>">
+                   class="flex items-center gap-3 mx-2 my-0.5 px-3 py-2 rounded-lg text-sm <?= $active ? 'bg-emerald-700 text-white' : 'hover:bg-emerald-700 hover:text-white' ?>">
                     <?= icon($icon) ?>
                     <span><?= e($label) ?></span>
                 </a>
             <?php endforeach; ?>
         <?php endforeach; ?>
-        <div class="px-4 pt-3 pb-1 mt-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Akun</div>
-        <a href="<?= url('password') ?>" class="flex items-center gap-3 mx-2 my-0.5 px-3 py-2 rounded-lg text-sm hover:bg-slate-800 hover:text-white">
+        <div class="px-4 pt-3 pb-1 mt-3 text-[11px] font-semibold uppercase tracking-wider text-emerald-300">Akun</div>
+        <a href="<?= url('password') ?>" class="flex items-center gap-3 mx-2 my-0.5 px-3 py-2 rounded-lg text-sm hover:bg-emerald-700 hover:text-white">
             <?= icon('key') ?><span>Ganti Password</span>
         </a>
-        <a href="<?= url('logout') ?>" class="flex items-center gap-3 mx-2 my-0.5 px-3 py-2 rounded-lg text-sm hover:bg-slate-800 hover:text-white">
+        <a href="<?= url('logout') ?>" class="flex items-center gap-3 mx-2 my-0.5 px-3 py-2 rounded-lg text-sm hover:bg-emerald-700 hover:text-white">
             <?= icon('logout') ?><span>Keluar</span>
         </a>
     </nav>
@@ -163,21 +164,37 @@ if (has_role('Administrator')) {
 <!-- ======================= MAIN ======================= -->
 <div class="lg:pl-64 flex flex-col flex-1 min-h-0">
     <!-- Topbar -->
-    <header class="sticky top-0 z-20 bg-white border-b border-slate-200 px-4 sm:px-6 h-16 flex items-center justify-between shrink-0">
+    <header class="sticky top-0 z-20 bg-emerald-600 border-b border-emerald-700 px-4 sm:px-6 h-16 flex items-center justify-between shrink-0">
         <div class="flex items-center gap-3">
-            <button id="sidebarToggle" class="lg:hidden text-slate-500 hover:text-slate-800 p-1"><?= icon('menu', 'w-6 h-6') ?></button>
-            <h1 class="text-lg sm:text-xl font-semibold text-slate-800"><?= e($pageTitle ?? 'Dashboard') ?></h1>
-        </div>
-        <div class="flex items-center gap-3">
-            <div class="text-right hidden sm:block">
-                <div class="text-sm font-medium"><?= e($user['name']) ?></div>
-                <div class="text-xs text-slate-500"><?= e($user['role_name']) ?></div>
+            <button id="sidebarToggle" class="lg:hidden text-emerald-100 hover:text-white p-1"><?= icon('menu', 'w-6 h-6') ?></button>
+            <div class="lg:hidden flex items-center gap-2">
+                <?php if (!empty($profile['logo']) && file_exists(UPLOAD_DIR . '/' . $profile['logo'])): ?>
+                    <img src="<?= asset('uploads/' . e($profile['logo'])) ?>" class="h-8 w-8 object-cover drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]" alt="logo">
+                <?php else: ?>
+                    <div class="h-8 w-8 rounded-full bg-emerald-700 flex items-center justify-center font-bold text-white"><?= e(mb_substr($profile['nama_koperasi'] ?? 'KS', 0, 2)) ?></div>
+                <?php endif; ?>
+                <span class="text-sm font-semibold text-white truncate max-w-[140px]"><?= e($profile['nama_koperasi'] ?? APP_NAME) ?></span>
             </div>
-            <div class="h-10 w-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold">
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="text-center text-emerald-50" id="datetime">
+                <div class="text-sm font-medium" id="clock-time"></div>
+                <div class="text-xs" id="clock-date"></div>
+            </div>
+            <div class="text-right hidden sm:block">
+                <div class="text-sm font-medium text-white"><?= e($user['name']) ?></div>
+                <div class="text-xs text-emerald-100"><?= e($user['role_name']) ?></div>
+            </div>
+            <div class="h-10 w-10 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold">
                 <?= e(strtoupper(mb_substr($user['name'], 0, 2))) ?>
             </div>
         </div>
     </header>
+
+    <!-- Page Header -->
+    <div class="px-4 sm:px-6 py-4 sm:py-6">
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-800"><?= e($pageTitle ?? 'Dashboard') ?></h1>
+    </div>
 
 <!-- Content -->
     <main class="flex-1 p-4 sm:p-6 pb-12">
@@ -187,9 +204,9 @@ if (has_role('Administrator')) {
     </main>
 
     <!-- Footer -->
-    <footer class="bg-slate-50 border-t border-slate-200 lg:pl-64">
+    <footer class="bg-emerald-600 border-t border-emerald-700 lg:pl-64">
         <div class="max-w-full mx-auto px-4 sm:px-6 py-3">
-            <div class="flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-slate-500">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-emerald-100">
                 <span>Sistem Informasi Koperasi Madrasah - <?= e($profile['nama_sekolah'] ?? 'Nama Sekolah') ?></span>
                 <span>&copy; <?= date('Y') ?> All rights reserved.</span>
             </div>

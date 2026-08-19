@@ -42,9 +42,9 @@
                                 <a href="<?= url('hutang', ['action' => 'edit', 'id' => $r['id']]) ?>" class="btn btn-ghost p-1.5" title="Ubah"><?= icon('edit', 'w-4 h-4') ?></a>
                             <?php endif; ?>
                             <?php if (has_role('Administrator')): ?>
-                                <form method="post" action="<?= url('hutang', ['action' => 'cancel', 'id' => $r['id']]) ?>" class="inline">
+                                <form method="post" action="<?= url('hutang', ['action' => 'destroy', 'id' => $r['id']]) ?>" class="inline">
                                     <?= csrf_field() ?>
-                                    <button type="submit" class="btn btn-ghost p-1.5 text-red-600" onclick="return confirmCancelForm(event, 'Hapus hutang ini? (pembelian terkait dibatalkan)')" title="Hapus (Batalkan)"><?= icon('trash', 'w-4 h-4') ?></button>
+                                    <button type="submit" class="btn btn-ghost p-1.5 text-red-600" onclick="return appConfirmSubmit(event, 'Hapus hutang ini? Data tidak bisa dikembalikan.', 'Hapus')" title="Hapus"><?= icon('trash', 'w-4 h-4') ?></button>
                                 </form>
                             <?php endif; ?>
                         </div>

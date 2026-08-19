@@ -55,7 +55,7 @@
                             <?php if (has_role('Administrator') && $t['status'] === 'AKTIF'): ?>
                                 <form method="post" action="<?= url('pembelian', ['action' => 'destroy', 'id' => $t['id']]) ?>" class="inline">
                                     <?= csrf_field() ?>
-                                    <button type="submit" class="btn btn-ghost p-1.5 text-red-600" onclick="return appConfirmSubmit(event, 'Hapus permanen pembelian ini? Data tidak bisa dikembalikan.', 'Hapus Permanen')" title="Hapus Permanen"><?= icon('trash', 'w-4 h-4') ?></button>
+                                    <button type="submit" class="btn btn-ghost p-1.5 text-red-600" onclick="return appConfirmSubmit(event, 'Hapus pembelian ini? Data tidak bisa dikembalikan.', 'Hapus')" title="Hapus"><?= icon('trash', 'w-4 h-4') ?></button>
                                 </form>
                             <?php endif; ?>
                         </div>

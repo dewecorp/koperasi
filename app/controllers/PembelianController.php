@@ -10,13 +10,14 @@ class PembelianController extends Controller
         $this->guard(['Administrator', 'Bendahara']);
         $pdo = db();
 
+        $tahunAjaran = tahun_ajaran_aktif();
         $dari = input('dari', date('Y-m-01'));
         $sampai = input('sampai', date('Y-m-d'));
         $q = trim(input('q', ''));
         $status = input('status', $isHistory ? 'all' : 'AKTIF');
 
-        $where = ['t.type = "pembelian"', 't.tanggal BETWEEN ? AND ?'];
-        $params = [$dari, $sampai];
+        $where = ['t.type = "pembelian"', 't.tahun_ajaran = ?', 't.tanggal BETWEEN ? AND ?'];
+        $params = [$tahunAjaran, $dari, $sampai];
         if ($q !== '') {
             $where[] = '(t.no_transaksi LIKE ? OR t.keterangan LIKE ? OR s.name LIKE ?)';
             $like = '%' . $q . '%';
@@ -40,6 +41,7 @@ class PembelianController extends Controller
         $this->render('pembelian/index', [
             'pageTitle' => $isHistory ? 'Riwayat Pembelian' : 'Pembelian',
             'pg' => $pg,
+            'tahunAjaran' => $tahunAjaran,
             'dari' => $dari,
             'sampai' => $sampai,
             'q' => $q,
@@ -76,6 +78,7 @@ class PembelianController extends Controller
             redirect('pembelian&action=create');
         }
 
+        $tahunAjaran = input('tahun_ajaran', tahun_ajaran_aktif());
         $tanggal = input('tanggal', date('Y-m-d'));
         $metode = input('metode', 'tunai');
         $supplierId = input('supplier_id', null) ?: null;
@@ -113,7 +116,7 @@ class PembelianController extends Controller
 
         $fin = new FinanceService();
         try {
-            $txId = $fin->savePembelian($tanggal, $supplierId, $metode, $items, $keterangan);
+            $txId = $fin->savePembelian($tanggal, $supplierId, $metode, $items, $keterangan, $tahunAjaran);
             audit_log('TAMBAH PEMBELIAN', 'total: ' . rupiah(array_sum(array_column($items, 'subtotal'))));
             flash('success', 'Pembelian berhasil dicatat.');
             redirect('pembelian&action=show&id=' . $txId);
@@ -254,7 +257,7 @@ class PembelianController extends Controller
 
             $pdo->commit();
             audit_log('HAPUS PEMBELIAN', $noTransaksi);
-            flash('success', 'Pembelian berhasil dihapus permanen.');
+            flash('success', 'Pembelian berhasil dihapus.');
         } catch (Throwable $e) {
             $pdo->rollBack();
             flash('error', 'Gagal menghapus: ' . $e->getMessage());

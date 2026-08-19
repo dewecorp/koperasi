@@ -9,11 +9,12 @@ class PiutangController extends Controller
     {
         $this->guard(['Administrator', 'Bendahara']);
         $pdo = db();
+        $tahunAjaran = tahun_ajaran_aktif();
         $q = trim(input('q', ''));
         $status = input('status', '');
 
-        $where = ['r.status = "AKTIF"'];
-        $params = [];
+        $where = ['r.status = "AKTIF"', 'r.tahun_ajaran = ?'];
+        $params = [$tahunAjaran];
         if ($q !== '') {
             $where[] = '(c.name LIKE ? OR r.no_transaksi LIKE ?)';
             $like = '%' . $q . '%';
@@ -46,6 +47,7 @@ class PiutangController extends Controller
         $this->render('piutang/index', [
             'pageTitle' => 'Piutang',
             'pg' => $pg,
+            'tahunAjaran' => $tahunAjaran,
             'q' => $q,
             'status' => $status,
         ]);
@@ -81,6 +83,7 @@ class PiutangController extends Controller
             redirect('piutang&action=show&id=' . $id);
         }
         $piutang = $this->load($id);
+        $tahunAjaran = input('tahun_ajaran', tahun_ajaran_aktif());
         $tanggal = input('tanggal', date('Y-m-d'));
         $nominal = (float)input('nominal', 0);
         $keterangan = trim(input('keterangan', ''));
@@ -92,7 +95,7 @@ class PiutangController extends Controller
         }
 
         try {
-            (new FinanceService())->bayarPiutang((int)$id, $tanggal, $nominal, $keterangan);
+            (new FinanceService())->bayarPiutang((int)$id, $tanggal, $nominal, $keterangan, $tahunAjaran);
             audit_log('BAYAR PIUTANG', $piutang['no_transaksi'] . ' ' . rupiah($nominal));
             flash('success', 'Pembayaran piutang dicatat. Kas bertambah.');
         } catch (Throwable $e) {
@@ -194,5 +197,32 @@ class PiutangController extends Controller
             abort_notfound('Piutang tidak ditemukan.');
         }
         return $row;
+    }
+
+    public function destroy(?string $id = null): void
+    {
+        $this->guard(['Administrator']);
+        if (!csrf_verify()) {
+            flash('error', 'Token keamanan tidak valid.');
+            redirect('piutang');
+        }
+        $piutang = $this->load($id);
+        $noTransaksi = $piutang['no_transaksi'];
+
+        $pdo = db();
+        $pdo->beginTransaction();
+        try {
+            // Hapus pembayaran piutang
+            $pdo->prepare('DELETE FROM receivable_payments WHERE receivable_id = ?')->execute([$id]);
+            // Hapus piutang
+            $pdo->prepare('DELETE FROM receivables WHERE id = ?')->execute([$id]);
+            $pdo->commit();
+            audit_log('HAPUS PIUTANG', $noTransaksi);
+            flash('success', 'Piutang berhasil dihapus.');
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            flash('error', 'Gagal menghapus: ' . $e->getMessage());
+        }
+        redirect('piutang');
     }
 }

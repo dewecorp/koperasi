@@ -1,36 +1,57 @@
 /* Script global aplikasi */
 
-document.addEventListener('DOMContentLoaded', function () {
-  // ---- Sidebar scroll position persistence ----
-  var sidebar = document.getElementById('sidebar');
-  if (sidebar) {
-    // Restore scroll position
-    var savedScroll = sessionStorage.getItem('sidebarScrollTop');
-    if (savedScroll) {
-      sidebar.scrollTop = parseInt(savedScroll, 10);
+function initApp() {
+  var sidebarNav = document.querySelector('#sidebar nav');
+
+  // ---- Ensure active menu item is visible on every page load ----
+  if (sidebarNav) {
+    var activeLink = sidebarNav.querySelector('a.bg-emerald-700.text-white, a.bg-emerald-600.text-white, a.bg-emerald-600');
+    if (activeLink) {
+      // Force scroll to active item (centered in viewport)
+      activeLink.scrollIntoView({ behavior: 'auto', block: 'center' });
     }
-    // Save scroll position before unload
-    window.addEventListener('beforeunload', function () {
-      sessionStorage.setItem('sidebarScrollTop', sidebar.scrollTop.toString());
-    });
   }
 
   // ---- Sidebar mobile ----
+  var toggleBtn = document.getElementById('sidebarToggle');
+  var sidebar = document.getElementById('sidebar');
   var overlay = document.getElementById('sidebarOverlay');
-  var toggle = document.getElementById('sidebarToggle');
-  if (toggle && sidebar) {
-    toggle.addEventListener('click', function () {
+  if (toggleBtn && sidebar && overlay) {
+    toggleBtn.addEventListener('click', function () {
       sidebar.classList.toggle('-translate-x-full');
       overlay.classList.toggle('hidden');
     });
-  }
-  if (overlay) {
     overlay.addEventListener('click', function () {
       sidebar.classList.add('-translate-x-full');
       overlay.classList.add('hidden');
     });
   }
-});
+
+  // ---- Real-time clock in navbar ----
+  var timeEl = document.getElementById('clock-time');
+  var dateEl = document.getElementById('clock-date');
+  if (timeEl && dateEl) {
+    var days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    var months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    function updateClock() {
+      var now = new Date();
+      var h = String(now.getHours()).padStart(2, '0');
+      var m = String(now.getMinutes()).padStart(2, '0');
+      var s = String(now.getSeconds()).padStart(2, '0');
+      timeEl.textContent = h + ':' + m + ':' + s;
+      dateEl.textContent = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+  }
+}
+
+// Initialize app when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
 
 /* ================= Filter auto-submit ================= */
 document.addEventListener('DOMContentLoaded', function () {

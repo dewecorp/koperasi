@@ -5,6 +5,22 @@
 
         <form method="post" action="<?= url('pengaturan') ?>" class="space-y-4">
             <?= csrf_field() ?>
+            
+            <div class="p-4 border border-slate-200 rounded-xl">
+                <label class="label">Tahun Ajaran Aktif</label>
+                <select name="tahun_ajaran_aktif" class="input">
+                    <?php
+                    $allTahun = array_merge($tahunOptions, array_column($tahunBerisi, 'tahun_ajaran'));
+                    $allTahun = array_values(array_unique($allTahun));
+                    sort($allTahun);
+                    ?>
+                    <?php foreach ($allTahun as $opt): ?>
+                        <option value="<?= e($opt) ?>" <?= $set['tahun_ajaran_aktif'] === $opt ? 'selected' : '' ?>><?= e($opt) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="text-sm text-slate-500 mt-1">Data transaksi mengikuti tahun ajaran aktif. Pilih tahun ajaran lama untuk melihat datanya. Ganti ke tahun baru untuk memulai transaksi baru.</p>
+            </div>
+
             <div class="flex items-start justify-between gap-4 p-4 border border-slate-200 rounded-xl">
                 <div>
                     <div class="font-medium text-slate-800">Izinkan Saldo Kas Negatif</div>
@@ -38,12 +54,36 @@
         </form>
     </div>
 
-    <div class="mt-6 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <h2 class="font-semibold text-slate-800 mb-3">Informasi Sistem</h2>
-        <dl class="text-sm space-y-2">
-            <div class="flex justify-between"><dt class="text-slate-500">Aplikasi</dt><dd><?= e(APP_NAME) ?> v<?= e(APP_VERSION) ?></dd></div>
-            <div class="flex justify-between"><dt class="text-slate-500">PHP</dt><dd><?= e(PHP_VERSION) ?></dd></div>
-            <div class="flex justify-between"><dt class="text-slate-500">Database</dt><dd><?= e(DB_NAME) ?> (<?= e(DB_HOST) ?>)</dd></div>
-        </dl>
+    <?php
+    $tahunHapusList = array_filter(
+        array_merge($tahunOptions, array_column($tahunBerisi, 'tahun_ajaran')),
+        fn($t) => $t !== $set['tahun_ajaran_aktif']
+    );
+    $tahunHapusList = array_values(array_unique($tahunHapusList));
+    sort($tahunHapusList);
+    ?>
+
+    <div class="mt-6 bg-white rounded-xl shadow-sm border border-red-200 p-6">
+        <h2 class="font-semibold text-red-700 mb-1">Hapus Data per Tahun Ajaran</h2>
+        <p class="text-sm text-slate-500 mb-4">Hapus seluruh transaksi (penjualan, pembelian, kas, piutang, hutang, stok) pada satu tahun ajaran untuk mengosongkan database. Data yang dihapus <b>tidak dapat dikembalikan</b>. Tahun ajaran aktif tidak dapat dihapus.</p>
+
+        <?php if (empty($tahunHapusList)): ?>
+            <div class="text-sm text-slate-400">Belum ada data tahun ajaran untuk dihapus.</div>
+        <?php else: ?>
+            <form method="post" action="<?= url('pengaturan', ['action' => 'hapusTahunAjaran']) ?>" class="flex flex-col sm:flex-row gap-2 items-end">
+                <?= csrf_field() ?>
+                <div class="flex-1 w-full">
+                    <label class="label">Tahun Ajaran</label>
+                    <select name="tahun_ajaran_hapus" class="input" required>
+                        <option value="">- Pilih tahun ajaran -</option>
+                        <?php foreach ($tahunHapusList as $t): ?>
+                            <?php $jml = 0; foreach ($tahunBerisi as $tb) if ($tb['tahun_ajaran'] === $t) $jml = (int)$tb['jml']; ?>
+                            <option value="<?= e($t) ?>"><?= e($t) ?> <?= $jml > 0 ? '(' . $jml . ' transaksi)' : '(kosong)' ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <button type="submit" class="btn bg-red-600 text-white hover:bg-red-700" onclick="return appConfirmSubmit(event, 'Seluruh data transaksi tahun ajaran ini akan dihapus permanen dan tidak bisa dikembalikan. Lanjutkan?', 'Hapus Data')"><?= icon('trash', 'w-4 h-4') ?> Hapus Data</button>
+            </form>
+        <?php endif; ?>
     </div>
 </div>

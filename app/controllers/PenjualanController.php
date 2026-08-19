@@ -10,13 +10,14 @@ class PenjualanController extends Controller
         $this->guard();
         $pdo = db();
 
+        $tahunAjaran = tahun_ajaran_aktif();
         $dari = input('dari', date('Y-m-01'));
         $sampai = input('sampai', date('Y-m-d'));
         $q = trim(input('q', ''));
         $status = input('status', $isHistory ? 'all' : 'AKTIF');
 
-        $where = ['t.type = "penjualan"', 't.tanggal BETWEEN ? AND ?'];
-        $params = [$dari, $sampai];
+        $where = ['t.type = "penjualan"', 't.tahun_ajaran = ?', 't.tanggal BETWEEN ? AND ?'];
+        $params = [$tahunAjaran, $dari, $sampai];
         if ($q !== '') {
             $where[] = '(t.no_transaksi LIKE ? OR t.keterangan LIKE ? OR c.name LIKE ?)';
             $like = '%' . $q . '%';
@@ -40,6 +41,7 @@ class PenjualanController extends Controller
         $this->render('penjualan/index', [
             'pageTitle' => $isHistory ? 'Riwayat Penjualan' : 'Penjualan',
             'pg' => $pg,
+            'tahunAjaran' => $tahunAjaran,
             'dari' => $dari,
             'sampai' => $sampai,
             'q' => $q,
@@ -76,6 +78,7 @@ class PenjualanController extends Controller
             redirect('penjualan&action=create');
         }
 
+        $tahunAjaran = input('tahun_ajaran', tahun_ajaran_aktif());
         $tanggal = input('tanggal', date('Y-m-d'));
         $metode = input('metode', 'tunai');
         $customerId = input('customer_id', null) ?: null;
@@ -118,7 +121,7 @@ class PenjualanController extends Controller
 
         $fin = new FinanceService();
         try {
-            $txId = $fin->savePenjualan($tanggal, $customerId, $metode, $items, $keterangan);
+            $txId = $fin->savePenjualan($tanggal, $customerId, $metode, $items, $keterangan, $tahunAjaran);
             audit_log('TAMBAH PENJUALAN', 'total: ' . rupiah(array_sum(array_column($items, 'subtotal'))));
             flash('success', 'Penjualan berhasil dicatat.');
             redirect('penjualan&action=show&id=' . $txId);
@@ -260,7 +263,7 @@ class PenjualanController extends Controller
 
             $pdo->commit();
             audit_log('HAPUS PENJUALAN', $noTransaksi);
-            flash('success', 'Penjualan berhasil dihapus permanen.');
+            flash('success', 'Penjualan berhasil dihapus.');
         } catch (Throwable $e) {
             $pdo->rollBack();
             flash('error', 'Gagal menghapus: ' . $e->getMessage());

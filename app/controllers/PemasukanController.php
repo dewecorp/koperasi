@@ -10,12 +10,13 @@ class PemasukanController extends Controller
         $this->guard(['Administrator', 'Bendahara']);
         $pdo = db();
 
+        $tahunAjaran = tahun_ajaran_aktif();
         $dari = input('dari', date('Y-m-01'));
         $sampai = input('sampai', date('Y-m-d'));
         $q = trim(input('q', ''));
 
-        $where = ['t.type = "pemasukan"', 't.tanggal BETWEEN ? AND ?'];
-        $params = [$dari, $sampai];
+        $where = ['t.type = "pemasukan"', 't.tahun_ajaran = ?', 't.tanggal BETWEEN ? AND ?'];
+        $params = [$tahunAjaran, $dari, $sampai];
         if ($q !== '') {
             $where[] = '(t.no_transaksi LIKE ? OR t.keterangan LIKE ? OR c.name LIKE ?)';
             $like = '%' . $q . '%';
@@ -39,6 +40,7 @@ class PemasukanController extends Controller
         $this->render('pemasukan/index', [
             'pageTitle' => 'Pemasukan Lain',
             'pg' => $pg,
+            'tahunAjaran' => $tahunAjaran,
             'dari' => $dari,
             'sampai' => $sampai,
             'q' => $q,
@@ -55,6 +57,7 @@ class PemasukanController extends Controller
             redirect('pemasukan');
         }
 
+        $tahunAjaran = input('tahun_ajaran', tahun_ajaran_aktif());
         $tanggal = input('tanggal', date('Y-m-d'));
         $kategoriId = (int)input('category_id', 0);
         $nominal = (float)input('nominal', 0);
@@ -75,7 +78,7 @@ class PemasukanController extends Controller
 
         $fin = new FinanceService();
         try {
-            $txId = $fin->savePemasukan($tanggal, $kategoriId, $nominal, $sumber, $keterangan);
+            $txId = $fin->savePemasukan($tanggal, $kategoriId, $nominal, $sumber, $keterangan, $tahunAjaran);
             $att = save_attachment('transactions', $txId);
             if ($att['error']) {
                 flash('warning', 'Transaksi tersimpan, tetapi bukti gagal: ' . $att['error']);
@@ -205,5 +208,31 @@ class PemasukanController extends Controller
             abort_notfound('Data pemasukan tidak ditemukan.');
         }
         return $tx;
+    }
+
+    public function destroy(?string $id = null): void
+    {
+        $this->guard(['Administrator']);
+        if (!csrf_verify()) {
+            flash('error', 'Token keamanan tidak valid.');
+            redirect('pemasukan');
+        }
+        $tx = $this->load($id);
+        $noTransaksi = $tx['no_transaksi'];
+
+        $pdo = db();
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare('DELETE FROM attachments WHERE related_type = "transactions" AND related_id = ?')->execute([$id]);
+            $pdo->prepare('DELETE FROM cash_transactions WHERE related_type = "transactions" AND related_id = ?')->execute([$id]);
+            $pdo->prepare('DELETE FROM transactions WHERE id = ?')->execute([$id]);
+            $pdo->commit();
+            audit_log('HAPUS PEMASUKAN', $noTransaksi);
+            flash('success', 'Pemasukan berhasil dihapus.');
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            flash('error', 'Gagal menghapus: ' . $e->getMessage());
+        }
+        redirect('pemasukan');
     }
 }
