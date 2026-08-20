@@ -8,7 +8,6 @@ $cards = [
     ['label' => 'Pembelian Bulan Ini', 'value' => $pembelianBulan, 'icon' => 'package', 'color' => 'bg-amber-500'],
     ['label' => 'Piutang', 'value' => $piutangTotal, 'icon' => 'wallet', 'color' => 'bg-fuchsia-500'],
     ['label' => 'Hutang', 'value' => $hutangTotal, 'icon' => 'bank', 'color' => 'bg-orange-500'],
-    ['label' => 'Modal Koperasi', 'value' => $modalTotal, 'icon' => 'safe', 'color' => 'bg-violet-500'],
     ['label' => 'Estimasi Laba/Rugi Bulan Ini', 'value' => $estimasiLaba, 'icon' => 'scale-balance', 'color' => $estimasiLaba >= 0 ? 'bg-teal-500' : 'bg-red-600'],
 ];
 ?>
