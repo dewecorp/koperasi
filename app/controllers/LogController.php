@@ -33,12 +33,26 @@ class LogController extends Controller
             30
         );
 
+        // Jumlah aktivitas (total & per user)
+        $totalAktivitas = (int)$pg['total'];
+        $jmlUser = (int)$pdo->query('SELECT COUNT(DISTINCT username) FROM audit_logs')->fetchColumn();
+        $perUser = $pdo->query(
+            'SELECT username, COUNT(*) AS jml FROM audit_logs GROUP BY username ORDER BY jml DESC LIMIT 8'
+        )->fetchAll();
+        $perJenis = $pdo->query(
+            'SELECT aktivitas, COUNT(*) AS jml FROM audit_logs GROUP BY aktivitas ORDER BY jml DESC LIMIT 8'
+        )->fetchAll();
+
         $this->render('log/index', [
             'pageTitle' => 'Log Aktivitas',
             'pg' => $pg,
             'q' => $q,
             'dari' => $dari,
             'sampai' => $sampai,
+            'totalAktivitas' => $totalAktivitas,
+            'jmlUser' => $jmlUser,
+            'perUser' => $perUser,
+            'perJenis' => $perJenis,
         ]);
     }
 }

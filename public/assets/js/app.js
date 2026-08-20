@@ -44,6 +44,48 @@ function initApp() {
     updateClock();
     setInterval(updateClock, 1000);
   }
+
+  // ---- Dropdown menu user (logout) ----
+  var userMenu = document.getElementById('userMenu');
+  var userMenuDropdown = document.getElementById('userMenuDropdown');
+  if (userMenu && userMenuDropdown) {
+    var hideTimer = null;
+    userMenu.addEventListener('mouseenter', function () {
+      clearTimeout(hideTimer);
+      userMenuDropdown.classList.remove('hidden');
+    });
+    userMenu.addEventListener('mouseleave', function () {
+      hideTimer = setTimeout(function () {
+        userMenuDropdown.classList.add('hidden');
+      }, 200);
+    });
+    userMenuDropdown.addEventListener('mouseenter', function () {
+      clearTimeout(hideTimer);
+    });
+    userMenuDropdown.addEventListener('mouseleave', function () {
+      userMenuDropdown.classList.add('hidden');
+    });
+  }
+
+  // ---- Konfirmasi logout ----
+  document.querySelectorAll('#linkLogout, a[href$="/logout"]').forEach(function (link) {
+    link.addEventListener('click', function (e) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'question',
+        title: 'Keluar?',
+        text: 'Yakin ingin keluar dari aplikasi?',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Keluar',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#dc2626'
+      }).then(function (r) {
+        if (r.isConfirmed) {
+          window.location.href = link.href;
+        }
+      });
+    });
+  });
 }
 
 // Initialize app when DOM is ready

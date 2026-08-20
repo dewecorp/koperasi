@@ -34,7 +34,18 @@ $scanUrl = url('barang', ['action' => 'cariBarcode']);
             </div>
             <div>
                 <label class="label">Satuan *</label>
-                <input type="text" name="satuan" class="input" value="<?= e($old('satuan')) ?>" placeholder="pcs" required>
+                <?php
+                $daftarSatuan = ['pcs', 'buah', 'butir', 'biji', 'lusin', 'kodi', 'rim', 'pak', 'pack', 'set', 'box', 'kardus', 'botol', 'sachet', 'kg', 'gram', 'ons', 'liter', 'ml', 'galon', 'meter', 'cm', 'lembar', 'pasang', 'unit'];
+                $satuanAktif = trim((string)$old('satuan')) !== '' ? trim((string)$old('satuan')) : 'pcs';
+                if (!in_array($satuanAktif, $daftarSatuan, true)) {
+                    $daftarSatuan[] = $satuanAktif;
+                }
+                ?>
+                <select name="satuan" class="input" required>
+                    <?php foreach ($daftarSatuan as $s): ?>
+                        <option value="<?= e($s) ?>" <?= $s === $satuanAktif ? 'selected' : '' ?>><?= e($s) ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
             <div>
                 <label class="label">Harga Beli *</label>

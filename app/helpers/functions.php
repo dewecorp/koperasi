@@ -293,6 +293,17 @@ function audit_log(string $aktivitas, string $detail = ''): void
     ]);
 }
 
+/** Hapus log aktivitas yang berumur lebih dari 24 jam. */
+function purge_old_logs(): void
+{
+    static $ran = false;
+    if ($ran) {
+        return;
+    }
+    $ran = true;
+    db()->exec('DELETE FROM audit_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)');
+}
+
 /** Ambil profil koperasi (di-cache per request). */
 function koperasi_profile(bool $refresh = false): array
 {

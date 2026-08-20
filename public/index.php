@@ -10,6 +10,8 @@ require_once APP_ROOT . '/app/helpers/auth.php';
 
 start_session();
 
+purge_old_logs();
+
 require_once APP_ROOT . '/app/core/App.php';
 require_once APP_ROOT . '/app/core/Controller.php';
 

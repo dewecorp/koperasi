@@ -113,8 +113,15 @@ if (has_role('Administrator')) {
     <!-- Scrollable Navigation -->
     <nav class="py-3 overflow-y-auto flex-1">
         <?php foreach ($navGroups as $group => $items): ?>
+            <?php
+            $groupItems = array_values(array_filter($items, function ($it) {
+                $p = explode('&', $it[1])[0];
+                return menu_akses($p);
+            }));
+            ?>
+            <?php if (empty($groupItems)): continue; endif; ?>
             <div class="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-300"><?= e($group) ?></div>
-            <?php foreach ($items as $item): [$page, $href, $icon, $label] = $item; ?>
+            <?php foreach ($groupItems as $item): [$page, $href, $icon, $label] = $item; ?>
                 <?php
                 $active = false;
                 $navAction = null;
@@ -179,12 +186,25 @@ if (has_role('Administrator')) {
                 <div class="text-sm font-medium" id="clock-time"></div>
                 <div class="text-xs" id="clock-date"></div>
             </div>
-            <div class="text-right hidden sm:block">
-                <div class="text-sm font-medium text-white"><?= e($user['name']) ?></div>
-                <div class="text-xs text-emerald-100"><?= e($user['role_name']) ?></div>
-            </div>
-            <div class="h-10 w-10 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold">
-                <?= e(strtoupper(mb_substr($user['name'], 0, 2))) ?>
+            <div class="relative" id="userMenu">
+                <button type="button" id="userMenuBtn" class="flex items-center gap-2 rounded-full hover:opacity-80 transition">
+                    <div class="text-right hidden sm:block">
+                        <div class="text-sm font-medium text-white"><?= e($user['name']) ?></div>
+                        <div class="text-xs text-emerald-100"><?= e($user['role_name']) ?></div>
+                    </div>
+                    <div class="h-10 w-10 rounded-full bg-emerald-700 text-white flex items-center justify-center font-bold">
+                        <?= e(strtoupper(mb_substr($user['name'], 0, 2))) ?>
+                    </div>
+                </button>
+                <div id="userMenuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
+                    <a href="<?= url('password') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        <?= icon('key', 'w-4 h-4 text-slate-400') ?> Ganti Password
+                    </a>
+                    <div class="border-t border-slate-100 my-1"></div>
+                    <a href="<?= url('logout') ?>" id="linkLogout" class="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                        <?= icon('logout', 'w-4 h-4') ?> Keluar
+                    </a>
+                </div>
             </div>
         </div>
     </header>

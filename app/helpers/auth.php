@@ -80,3 +80,21 @@ function has_role(string $role): bool
     $user = current_user();
     return $user && $user['role_name'] === $role;
 }
+
+/** Izin menu sidebar berdasarkan halaman & peran. */
+function menu_akses(string $page): bool
+{
+    $user = current_user();
+    if (!$user) {
+        return false;
+    }
+    $r = $user['role_name'];
+    if ($r === 'Administrator') {
+        return true;
+    }
+    if ($r === 'Petugas') {
+        return in_array($page, ['dashboard', 'penjualan', 'barang', 'pelanggan'], true);
+    }
+    // Bendahara: semua kecuali halaman khusus administrator
+    return !in_array($page, ['pengaturan', 'backup', 'log', 'profil', 'pengurus', 'pengguna'], true);
+}
