@@ -1,5 +1,5 @@
 <?php $p = koperasi_profile(); ?>
-<div class="max-w-4xl">
+<div class="w-full">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <h2 class="font-semibold text-slate-800 mb-1">Buat Backup Database</h2>

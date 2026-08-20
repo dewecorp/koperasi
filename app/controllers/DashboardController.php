@@ -137,6 +137,10 @@ class DashboardController extends Controller
         $saldoMinimum = (float)setting('saldo_minimum_cash', '500000');
         $saldoRendah = $saldoKas < $saldoMinimum;
 
+        // ===== Data aktivitas (log aktivitas) =====
+        $aktivitas = $pdo->query('SELECT * FROM audit_logs ORDER BY id DESC LIMIT 30')->fetchAll();
+        $jmlAktivitas24jam = (int)$pdo->query('SELECT COUNT(*) FROM audit_logs WHERE created_at >= NOW() - INTERVAL 24 HOUR')->fetchColumn();
+
         $this->render('dashboard/index', [
             'pageTitle' => 'Dashboard',
             'saldoKas' => $saldoKas,
@@ -160,6 +164,9 @@ class DashboardController extends Controller
             'hutangJatuhTempo' => $hutangJatuhTempo,
             'saldoRendah' => $saldoRendah,
             'saldoMinimum' => $saldoMinimum,
+            'aktivitas' => $aktivitas,
+            'jmlAktivitas24jam' => $jmlAktivitas24jam,
+            'jmlAktivitasHariIni' => $jmlAktivitasHariIni,
             'pageScripts' => ['chart.umd.min.js', 'dashboard.js'],
         ]);
     }

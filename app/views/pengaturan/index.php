@@ -1,4 +1,4 @@
-<div class="max-w-2xl">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <h2 class="font-semibold text-slate-800 mb-1">Pengaturan Aplikasi</h2>
         <p class="text-sm text-slate-500 mb-5">Pengaturan ini hanya dapat diubah oleh Administrator.</p>
@@ -63,7 +63,7 @@
     sort($tahunHapusList);
     ?>
 
-    <div class="mt-6 bg-white rounded-xl shadow-sm border border-red-200 p-6">
+    <div class="bg-white rounded-xl shadow-sm border border-red-200 p-6">
         <h2 class="font-semibold text-red-700 mb-1">Hapus Data per Tahun Ajaran</h2>
         <p class="text-sm text-slate-500 mb-4">Hapus seluruh transaksi (penjualan, pembelian, kas, piutang, hutang, stok) pada satu tahun ajaran untuk mengosongkan database. Data yang dihapus <b>tidak dapat dikembalikan</b>. Tahun ajaran aktif tidak dapat dihapus.</p>
 

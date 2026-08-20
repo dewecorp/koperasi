@@ -1,7 +1,7 @@
 <?php
 $p = $profile;
 ?>
-<div class="max-w-3xl">
+<div class="w-full">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <div class="flex items-center gap-4 mb-6">
             <?php if (!empty($p['logo']) && file_exists(UPLOAD_DIR . '/' . $p['logo'])): ?>

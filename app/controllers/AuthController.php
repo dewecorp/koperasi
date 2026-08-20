@@ -175,6 +175,6 @@ class AuthController extends Controller
             redirect('dashboard');
         }
 
-        $this->render('auth/password', ['user' => $user]);
+        $this->render('auth/password', ['pageTitle' => 'Ganti Password', 'user' => $user]);
     }
 }

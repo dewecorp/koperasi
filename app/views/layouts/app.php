@@ -76,7 +76,6 @@ $navAdmin = [
     'Pengaturan' => [
         ['pengaturan', 'pengaturan', 'cog', 'Pengaturan'],
         ['backup', 'backup', 'database', 'Backup / Restore'],
-        ['log', 'log', 'history', 'Log Aktivitas'],
     ],
 ];
 if (has_role('Administrator')) {
