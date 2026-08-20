@@ -1,0 +1,30 @@
+# Ignore deploy scripts and backup files
+*.bat
+*.zip
+
+# Ignore environment files
+.env
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore uploads (user generated content)
+public/uploads/*
+
+# Ignore backup files
+*.sql
+*.bak
+*.backup
+
+# Ignore node_modules (if any)
+node_modules/
+
+# Ignore composer vendor (if using composer)
+vendor/
