@@ -384,3 +384,16 @@ CREATE TABLE number_counters (
   last_number  INT UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (prefix, tanggal)
 ) ENGINE=InnoDB;
+
+-- ==================== LOGIN ATTEMPTS ========================
+-- Pencatatan percobaan login (anti brute force)
+CREATE TABLE login_attempts (
+  id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  username    VARCHAR(50)     NOT NULL,
+  ip          VARCHAR(45)     NOT NULL,
+  attempt_at  DATETIME        NOT NULL,
+  success     TINYINT(1)      NOT NULL DEFAULT 0,
+  PRIMARY KEY (id),
+  KEY idx_la_username (username),
+  KEY idx_la_attempt_at (attempt_at)
+) ENGINE=InnoDB;

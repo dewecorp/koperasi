@@ -7,6 +7,17 @@
  * ============================================================
  */
 
+/** Batas idle sebelum logout otomatis (detik): 2 jam. */
+const SESSION_IDLE_TIMEOUT = 7200;
+
+/** Hancurkan session & mulai ulang (untuk logout/auto-logout). */
+function destroy_session(): void
+{
+    session_unset();
+    session_destroy();
+    start_session();
+}
+
 /** Mulai session dengan pengaturan aman. */
 function start_session(): void
 {
@@ -63,6 +74,20 @@ function require_login(): void
     if (!is_logged_in()) {
         redirect('login');
     }
+
+    // Logout otomatis bila idle melebihi batas (2 jam)
+    if (isset($_SESSION['last_activity'])) {
+        $idle = time() - (int)$_SESSION['last_activity'];
+        if ($idle > SESSION_IDLE_TIMEOUT) {
+            audit_log('AUTO LOGOUT', 'Idle lebih dari 2 jam (' . floor($idle / 60) . ' menit)');
+            destroy_session();
+            flash('warning', 'Sesi berakhir karena tidak ada aktivitas selama 2 jam. Silakan masuk kembali.');
+            redirect('login');
+        }
+    }
+
+    // Catat aktivitas terakhir (pertahankan sesi aktif)
+    $_SESSION['last_activity'] = time();
 }
 
 /** Cek peran minimum. $roles = array nama role yang diizinkan. */
