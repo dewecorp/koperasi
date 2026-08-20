@@ -36,6 +36,12 @@ class DashboardController extends Controller
              FROM payables pb WHERE pb.status="AKTIF" AND pb.tahun_ajaran = "' . $tahunAjaran . '"'
         )->fetchColumn();
 
+        // Modal koperasi (tahun ajaran aktif)
+        $modalTotal = (float)$pdo->query(
+            'SELECT COALESCE(SUM(CASE WHEN type="modal_awal" OR type="tambahan" THEN nominal WHEN type="pengurangan" THEN -nominal END),0)
+             FROM capital_transactions WHERE status="AKTIF" AND tahun_ajaran = "' . $tahunAjaran . '"'
+        )->fetchColumn();
+
         // Estimasi laba/rugi bulan ini: Pendapatan - HPP - Biaya Operasional + Pemasukan Lain
         // CATATAN: biaya operasional = transaksi pengeluaran (BUKAN seluruh kas keluar,
         // karena pembelian tunai hanyalah kas -> stok dan sudah tercakup di HPP).
@@ -147,6 +153,7 @@ class DashboardController extends Controller
             'piutangTotal' => $piutangTotal,
             'hutangTotal' => $hutangTotal,
             'estimasiLaba' => $estimasiLaba,
+            'modalTotal' => $modalTotal,
             'bulanLabels' => json_encode($bulanLabels),
             'seriMasuk' => json_encode($seriMasuk),
             'seriKeluar' => json_encode($seriKeluar),

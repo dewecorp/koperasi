@@ -1,6 +1,7 @@
 <?php
 
 require_once APP_ROOT . '/app/core/Controller.php';
+require_once APP_ROOT . '/app/services/FinanceService.php';
 
 class ModalController extends Controller
 {
@@ -44,6 +45,7 @@ class ModalController extends Controller
         $type = input('type', 'tambahan');
         $nominal = (float)input('nominal', 0);
         $keterangan = trim(input('keterangan', ''));
+        $tahunAjaran = tahun_ajaran_aktif();
 
         $errors = validate(['tanggal' => 'date', 'nominal' => 'numeric|min:1']);
         if ($errors) {
@@ -56,14 +58,36 @@ class ModalController extends Controller
             redirect('modal');
         }
 
+        $pdo = db();
+        $pdo->beginTransaction();
         try {
             $no = nomor_transaksi('MDL', $tanggal);
-            db()->prepare(
-                'INSERT INTO capital_transactions (tanggal, no_transaksi, type, nominal, keterangan, status, user_id) VALUES (?, ?, ?, ?, ?, "AKTIF", ?)'
-            )->execute([$tanggal, $no, $type, $nominal, $keterangan, $_SESSION['user']['id']]);
+
+            // Pengurangan modal mengurangi kas; cek saldo cukup
+            if ($type === 'pengurangan') {
+                $fin = new FinanceService();
+                $fin->checkSaldoCukup($nominal);
+            }
+
+            $pdo->prepare(
+                'INSERT INTO capital_transactions (tahun_ajaran, tanggal, no_transaksi, type, nominal, keterangan, status, user_id)
+                 VALUES (?, ?, ?, ?, ?, ?, "AKTIF", ?)'
+            )->execute([$tahunAjaran, $tanggal, $no, $type, $nominal, $keterangan, $_SESSION['user']['id']]);
+            $capId = (int)$pdo->lastInsertId();
+
+            // Kas: modal masuk -> buku kas masuk; pengurangan -> buku kas keluar
+            $kategori = $type === 'pengurangan' ? 'Pengurangan Modal' : 'Modal';
+            $jenis = $type === 'pengurangan' ? 'keluar' : 'masuk';
+            $pdo->prepare(
+                'INSERT INTO cash_transactions (tahun_ajaran, tanggal, no_transaksi, jenis, kategori, nominal, keterangan, status, related_type, related_id, user_id)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, "AKTIF", "capital_transactions", ?, ?)'
+            )->execute([$tahunAjaran, $tanggal, $no, $jenis, $kategori, $nominal, 'Modal ' . $no . ' - ' . $keterangan, $capId, $_SESSION['user']['id']]);
+
+            $pdo->commit();
             audit_log('TAMBAH MODAL', $type . ' ' . rupiah($nominal));
-            flash('success', 'Transaksi modal dicatat.');
+            flash('success', 'Transaksi modal dicatat dan masuk ke buku kas.');
         } catch (Throwable $e) {
+            $pdo->rollBack();
             flash('error', $e->getMessage());
         }
         redirect('modal');
@@ -76,9 +100,20 @@ class ModalController extends Controller
             flash('error', 'Token keamanan tidak valid.');
             redirect('modal');
         }
-        db()->prepare('UPDATE capital_transactions SET status = "DIBATALKAN" WHERE id = ?')->execute([$id]);
+        $pdo = db();
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare('UPDATE capital_transactions SET status = "DIBATALKAN" WHERE id = ?')->execute([$id]);
+            // Balikkan efek kas
+            $pdo->prepare('UPDATE cash_transactions SET status = "DIBATALKAN" WHERE related_type = "capital_transactions" AND related_id = ? AND status = "AKTIF"')->execute([$id]);
+            $pdo->commit();
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            flash('error', $e->getMessage());
+            redirect('modal');
+        }
         audit_log('BATAL TRANSAKSI MODAL', 'ID: ' . $id);
-        flash('success', 'Transaksi modal dibatalkan.');
+        flash('success', 'Transaksi modal dibatalkan. Efek kas dibalik otomatis.');
         redirect('modal');
     }
 }

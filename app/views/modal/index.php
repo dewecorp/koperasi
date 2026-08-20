@@ -53,7 +53,7 @@ $hasEdit = has_role('Administrator') || has_role('Bendahara');
 <?php if ($hasEdit): ?>
 <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
     <h2 class="font-semibold text-slate-800 mb-4">Catat Transaksi Modal</h2>
-    <p class="text-xs text-slate-500 mb-4"><b>Catatan:</b> Modal dicatat terpisah dari pendapatan &amp; pengeluaran operasional, dan tidak memengaruhi saldo kas.</p>
+    <p class="text-xs text-slate-500 mb-4"><b>Catatan:</b> Modal awal &amp; tambahan modal menambah kas (tercatat di buku kas). Pengurangan modal mengurangi kas. Pembatalan membalik efek kas otomatis.</p>
     <form method="post" action="<?= url('modal', ['action' => 'store']) ?>" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <?= csrf_field() ?>
         <div>

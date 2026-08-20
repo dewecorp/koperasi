@@ -402,7 +402,7 @@ class FinanceService extends Model
     }
 
     /** Cek saldo kas cukup (bila pengaturan melarang saldo negatif). */
-    private function checkSaldoCukup(float $nominal): void
+    public function checkSaldoCukup(float $nominal): void
     {
         if (setting('allow_negative_cash', '0') === '1') {
             return;
