@@ -166,7 +166,6 @@ class DashboardController extends Controller
             'saldoMinimum' => $saldoMinimum,
             'aktivitas' => $aktivitas,
             'jmlAktivitas24jam' => $jmlAktivitas24jam,
-            'jmlAktivitasHariIni' => $jmlAktivitasHariIni,
             'pageScripts' => ['chart.umd.min.js', 'dashboard.js'],
         ]);
     }
