@@ -91,10 +91,11 @@ class FinanceService extends Model
                     [$tanggal, $nominal, $keterangan, $existing['id']]
                 );
             } else {
+                $noSaldo = 'SA-' . str_replace('/', '', $tahunAjaran);
                 $this->execute(
                     'INSERT INTO cash_transactions (tahun_ajaran, tanggal, no_transaksi, jenis, kategori, nominal, keterangan, status, user_id)
                      VALUES (?, ?, ?, "saldo_awal", "Saldo Awal", ?, ?, "AKTIF", ?)',
-                    [$tahunAjaran, $tanggal, 'SA-AWAL', $nominal, $keterangan, $this->uid()]
+                    [$tahunAjaran, $tanggal, $noSaldo, $nominal, $keterangan, $this->uid()]
                 );
             }
             $this->pdo->commit();
@@ -102,6 +103,26 @@ class FinanceService extends Model
             $this->pdo->rollBack();
             throw $e;
         }
+    }
+
+    /**
+     * Bawa saldo kas akhir tahun ajaran lama menjadi saldo awal tahun ajaran baru.
+     * Otomatis dibuat sekali; bila tahun baru sudah punya saldo awal, tidak diubah.
+     */
+    public function carryForwardSaldo(string $tahunLama, string $tahunBaru, string $tanggal = ''): bool
+    {
+        if ($tahunLama === '' || $tahunBaru === '' || $tahunLama === $tahunBaru) {
+            return false;
+        }
+        if ($this->saldoAwalRow($tahunBaru) !== null) {
+            return false;
+        }
+        if ($tanggal === '') {
+            $tanggal = date('Y-m-d');
+        }
+        $saldoLama = $this->saldoKas(null, $tahunLama);
+        $this->setSaldoAwal($tanggal, $saldoLama, 'Saldo kas tahun ajaran ' . $tahunLama . ' dibawa ke tahun ajaran ' . $tahunBaru, $tahunBaru);
+        return true;
     }
 
     /** Buku kas lengkap dengan saldo berjalan. */

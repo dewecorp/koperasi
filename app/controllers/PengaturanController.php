@@ -1,6 +1,7 @@
 <?php
 
 require_once APP_ROOT . '/app/core/Controller.php';
+require_once APP_ROOT . '/app/services/FinanceService.php';
 
 class PengaturanController extends Controller
 {
@@ -14,18 +15,36 @@ class PengaturanController extends Controller
                 flash('error', 'Token keamanan tidak valid.');
                 redirect('pengaturan');
             }
+            $tahunLama = setting('tahun_ajaran_aktif', '');
+            $tahunBaru = input('tahun_ajaran_aktif', '');
             $keys = [
                 'allow_negative_cash' => input('allow_negative_cash', '0') === '1' ? '1' : '0',
                 'allow_negative_stock' => input('allow_negative_stock', '0') === '1' ? '1' : '0',
                 'saldo_minimum_cash' => (string)max(0, (float)input('saldo_minimum_cash', 0)),
-                'tahun_ajaran_aktif' => input('tahun_ajaran_aktif', ''),
+                'tahun_ajaran_aktif' => $tahunBaru,
             ];
             foreach ($keys as $key => $value) {
                 $pdo->prepare('INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)')
                     ->execute([$key, $value]);
             }
+
+            // Bawa saldo kas tahun ajaran lama ke tahun ajaran baru
+            $diBawa = false;
+            if ($tahunLama !== '' && $tahunBaru !== '' && $tahunLama !== $tahunBaru) {
+                try {
+                    $diBawa = (new FinanceService())->carryForwardSaldo($tahunLama, $tahunBaru);
+                } catch (Throwable $e) {
+                    flash('error', 'Gagal membawa saldo kas: ' . $e->getMessage());
+                    redirect('pengaturan');
+                }
+            }
+
             audit_log('UBAH PENGATURAN', json_encode($keys));
-            flash('success', 'Pengaturan disimpan.');
+            if ($diBawa) {
+                flash('success', 'Pengaturan disimpan. Saldo kas tahun ajaran ' . e($tahunLama) . ' dibawa sebagai saldo awal tahun ajaran ' . e($tahunBaru) . '.');
+            } else {
+                flash('success', 'Pengaturan disimpan.');
+            }
             redirect('pengaturan');
         }
 

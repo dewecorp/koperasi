@@ -18,7 +18,7 @@
                         <option value="<?= e($opt) ?>" <?= $set['tahun_ajaran_aktif'] === $opt ? 'selected' : '' ?>><?= e($opt) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <p class="text-sm text-slate-500 mt-1">Data transaksi mengikuti tahun ajaran aktif. Pilih tahun ajaran lama untuk melihat datanya. Ganti ke tahun baru untuk memulai transaksi baru.</p>
+                <p class="text-sm text-slate-500 mt-1">Data transaksi mengikuti tahun ajaran aktif. Saat pindah ke tahun ajaran baru, saldo kas tahun sebelumnya otomatis dibawa sebagai saldo awal dengan keterangan "Saldo kas tahun ajaran ..."</p>
             </div>
 
             <div class="flex items-start justify-between gap-4 p-4 border border-slate-200 rounded-xl">
