@@ -171,7 +171,7 @@ if (has_role('Administrator')) {
 <div class="lg:pl-64 flex flex-col flex-1 min-h-0">
     <!-- Topbar -->
     <header class="sticky top-0 z-20 bg-emerald-600 border-b border-emerald-700 px-4 sm:px-6 h-16 flex items-center justify-between shrink-0">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-4">
             <button id="sidebarToggle" class="lg:hidden text-emerald-100 hover:text-white p-1"><?= icon('menu', 'w-6 h-6') ?></button>
             <div class="lg:hidden flex items-center gap-2">
                 <?php if (!empty($profile['logo']) && file_exists(UPLOAD_DIR . '/' . $profile['logo'])): ?>
@@ -181,12 +181,12 @@ if (has_role('Administrator')) {
                 <?php endif; ?>
                 <span class="text-sm font-semibold text-white truncate max-w-[140px]"><?= e($profile['nama_koperasi'] ?? APP_NAME) ?></span>
             </div>
-        </div>
-        <div class="flex items-center gap-4">
-            <div class="text-center text-emerald-50" id="datetime">
+            <div class="text-left text-emerald-50 leading-tight" id="datetime">
                 <div class="text-sm font-medium" id="clock-time"></div>
                 <div class="text-xs" id="clock-date"></div>
             </div>
+        </div>
+        <div class="flex items-center gap-4">
             <div class="relative" id="userMenu">
                 <button type="button" id="userMenuBtn" class="flex items-center gap-2 rounded-full hover:opacity-80 transition">
                     <div class="text-right hidden sm:block">
