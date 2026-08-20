@@ -60,7 +60,7 @@ class DashboardController extends Controller
         $seriKeluar = [];
         for ($i = 11; $i >= 0; $i--) {
             $t = strtotime("first day of -$i months");
-            $bulanLabels[] = date('M Y', $t);
+            $bulanLabels[] = bulan_pendek((int)date('Y', $t), (int)date('n', $t));
             $bStart = date('Y-m-01', $t);
             $bEnd = date('Y-m-t', $t);
             $seriMasuk[] = $fin->totalMasuk($bStart, $bEnd, $tahunAjaran);

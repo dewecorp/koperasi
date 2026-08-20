@@ -156,6 +156,13 @@ function tanggal_waktu($datetime): string
     return tanggal(substr($datetime, 0, 10)) . ' ' . substr($datetime, 11, 5);
 }
 
+/** Nama pendek bulan Indonesia (Agu, Sep, ...). */
+function bulan_pendek(int $year, int $month): string
+{
+    $pendek = [1 => 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    return $pendek[$month] . ' ' . $year;
+}
+
 /** Ambil nilai dari $_GET/$_POST dengan default. */
 function input(string $key, $default = null)
 {
