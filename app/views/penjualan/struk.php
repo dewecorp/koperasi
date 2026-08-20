@@ -17,6 +17,9 @@ $nomor = $tx['no_transaksi'];
 <body>
 <div class="struk text-sm">
     <div class="text-center mb-2">
+        <?php if (!empty($p['logo']) && file_exists(UPLOAD_DIR . '/' . $p['logo'])): ?>
+            <img src="<?= asset('uploads/' . e($p['logo'])) ?>" class="mx-auto max-h-14 w-auto object-contain mb-1" alt="logo">
+        <?php endif; ?>
         <div class="font-bold text-base"><?= e($p['nama_koperasi']) ?></div>
         <div><?= e($p['nama_sekolah']) ?></div>
         <div><?= e($p['alamat']) ?></div>

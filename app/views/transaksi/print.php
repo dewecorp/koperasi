@@ -12,8 +12,11 @@ $user = current_user();
     * { box-sizing: border-box; }
     body { font-family: Arial, sans-serif; color: #1e293b; font-size: 12px; margin: 0; }
     .kertas { max-width: 800px; margin: 0 auto; padding: 24px; }
-    .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 20px; }
-    .header .nama { font-size: 18px; font-weight: bold; }
+    .header { display: flex; align-items: center; gap: 16px; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 20px; }
+    .header .logo-img { max-height: 70px; width: auto; object-fit: contain; }
+    .header .teks { flex: 1; text-align: center; }
+    .header .teks .nama { font-size: 18px; font-weight: bold; }
+    .header .teks .alamat { font-size: 11px; color: #475569; }
     .judul { text-align: center; margin-bottom: 4px; }
     .judul h2 { margin: 0; font-size: 15px; }
     table { width: 100%; border-collapse: collapse; margin-top: 12px; }
@@ -31,9 +34,16 @@ $user = current_user();
 <button class="btn" onclick="window.print()">Cetak</button>
 <div class="kertas">
     <div class="header">
-        <div class="nama"><?= e($p['nama_koperasi']) ?></div>
-        <div><?= e($p['nama_sekolah']) ?></div>
-        <div><?= e($p['alamat']) ?></div>
+        <div style="flex-shrink:0;">
+            <?php if (!empty($p['logo']) && file_exists(UPLOAD_DIR . '/' . $p['logo'])): ?>
+                <img src="<?= asset('uploads/' . e($p['logo'])) ?>" class="logo-img" alt="logo">
+            <?php endif; ?>
+        </div>
+        <div class="teks">
+            <div class="nama"><?= e($p['nama_koperasi']) ?></div>
+            <div><?= e($p['nama_sekolah']) ?></div>
+            <div class="alamat"><?= e($p['alamat']) ?></div>
+        </div>
     </div>
     <div class="judul">
         <h2><?= e($title) ?></h2>
