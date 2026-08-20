@@ -115,14 +115,30 @@ function initApp() {
             fetch(btnUpdate.dataset.url, { method: 'POST', body: form })
               .then(function (resp) { return resp.json(); })
               .then(function (res) {
-                if (res.ok) {
-                  Swal.fire({ icon: 'success', title: 'Update Berhasil', text: res.message, confirmButtonText: 'OK' });
-                } else {
-                  Swal.fire({ icon: 'error', title: 'Update Gagal', text: res.message, confirmButtonText: 'OK' });
-                }
+                var icon = res.ok ? 'success' : 'error';
+                var title = res.ok ? 'Update Berhasil' : 'Update Gagal';
+                var bg = res.ok ? '#059669' : '#dc2626';
+                Swal.fire({
+                  icon: icon,
+                  title: title,
+                  text: res.message,
+                  background: bg,
+                  color: '#ffffff',
+                  iconColor: '#ffffff',
+                  toast: true,
+                  position: 'top-end',
+                  timer: res.ok ? 3500 : 5000,
+                  timerProgressBar: false,
+                  showConfirmButton: false
+                });
               })
               .catch(function () {
-                Swal.fire({ icon: 'error', title: 'Update Gagal', text: 'Terjadi kesalahan koneksi.', confirmButtonText: 'OK' });
+                Swal.fire({
+                  icon: 'error', title: 'Update Gagal',
+                  text: 'Terjadi kesalahan koneksi.',
+                  background: '#dc2626', color: '#ffffff', iconColor: '#ffffff',
+                  toast: true, position: 'top-end', timer: 5000, showConfirmButton: false
+                });
               });
           }
         });
@@ -202,18 +218,30 @@ document.addEventListener('DOMContentLoaded', function () {
 function showSuccess(message) {
   return Swal.fire({
     icon: 'success', title: 'Berhasil', text: message,
-    timer: 2500, timerProgressBar: true, showConfirmButton: false,
-    position: 'top-end', toast: true
+    timer: 2500, showConfirmButton: false,
+    toast: true, position: 'top-end'
   });
 }
 function showError(message) {
-  return Swal.fire({ icon: 'error', title: 'Gagal', text: message, confirmButtonText: 'OK' });
+  return Swal.fire({
+    icon: 'error', title: 'Gagal', text: message,
+    background: '#dc2626', color: '#ffffff', iconColor: '#ffffff',
+    toast: true, position: 'top-end', timer: 4500, showConfirmButton: false
+  });
 }
 function showWarning(message) {
-  return Swal.fire({ icon: 'warning', title: 'Peringatan', text: message, confirmButtonText: 'OK' });
+  return Swal.fire({
+    icon: 'warning', title: 'Peringatan', text: message,
+    background: '#d97706', color: '#ffffff', iconColor: '#ffffff',
+    toast: true, position: 'top-end', timer: 4000, showConfirmButton: false
+  });
 }
 function showInfo(message) {
-  return Swal.fire({ icon: 'info', title: 'Informasi', text: message, confirmButtonText: 'OK' });
+  return Swal.fire({
+    icon: 'info', title: 'Informasi', text: message,
+    background: '#0284c7', color: '#ffffff', iconColor: '#ffffff',
+    toast: true, position: 'top-end', timer: 4000, showConfirmButton: false
+  });
 }
 function confirmAction(title, text, confirmText) {
   return Swal.fire({

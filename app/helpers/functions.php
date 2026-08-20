@@ -216,7 +216,7 @@ function flash_pull(): array
     return $flashes;
 }
 
-/** Tampilkan flash messages sebagai SweetAlert2 (dipanggil di layout/halaman). */
+/** Tampilkan flash messages sebagai SweetAlert2 toast (berwarna sesuai jenis). */
 function flash_swal_scripts(): string
 {
     $flashes = flash_pull();
@@ -227,22 +227,20 @@ function flash_swal_scripts(): string
     foreach ($flashes as $f) {
         $icon = $f['type'] === 'success' ? 'success' : ($f['type'] === 'warning' ? 'warning' : 'error');
         $title = $f['type'] === 'success' ? 'Berhasil' : ($f['type'] === 'warning' ? 'Peringatan' : 'Gagal');
-        $opt = [
+        $timer = $f['type'] === 'success' ? 2500 : ($f['type'] === 'warning' ? 4000 : 4500);
+        $bg = $f['type'] === 'success' ? '#059669' : ($f['type'] === 'warning' ? '#d97706' : '#dc2626');
+        $parts[] = 'Swal.fire(' . json_encode([
             'icon' => $icon,
             'title' => $title,
             'text' => $f['message'],
-        ];
-        // Alert sukses: tutup otomatis
-        if ($f['type'] === 'success') {
-            $opt['timer'] = 2500;
-            $opt['timerProgressBar'] = true;
-            $opt['showConfirmButton'] = false;
-            $opt['position'] = 'top-end';
-            $opt['toast'] = true;
-        } else {
-            $opt['confirmButtonText'] = 'OK';
-        }
-        $parts[] = 'Swal.fire(' . json_encode($opt, JSON_UNESCAPED_UNICODE) . ');';
+            'toast' => true,
+            'position' => 'top-end',
+            'timer' => $timer,
+            'showConfirmButton' => false,
+            'background' => $bg,
+            'color' => '#ffffff',
+            'iconColor' => '#ffffff',
+        ], JSON_UNESCAPED_UNICODE) . ');';
     }
     return '<script>document.addEventListener("DOMContentLoaded",function(){'
         . implode('', $parts)
