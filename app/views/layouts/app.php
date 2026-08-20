@@ -35,9 +35,7 @@ $navGroups = [
     ],
     'Transaksi' => [
         ['penjualan', 'penjualan', 'cart', 'Penjualan'],
-        ['penjualan', 'penjualan&action=history', 'history', 'Riwayat Penjualan'],
         ['pembelian', 'pembelian', 'package', 'Pembelian'],
-        ['pembelian', 'pembelian&action=history', 'history', 'Riwayat Pembelian'],
         ['pemasukan', 'pemasukan', 'trending-up', 'Pemasukan Lain'],
         ['pengeluaran', 'pengeluaran', 'trending-down', 'Pengeluaran'],
         ['piutang', 'piutang', 'wallet', 'Piutang'],
