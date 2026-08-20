@@ -86,6 +86,49 @@ function initApp() {
       });
     });
   });
+
+  // ---- Update sistem ----
+  var btnUpdate = document.getElementById('btnUpdateSistem');
+  if (btnUpdate) {
+    btnUpdate.addEventListener('click', function () {
+      Swal.fire({
+        icon: 'question',
+        title: 'Update Sistem?',
+        text: 'Aplikasi akan diperbarui ke versi terbaru. Proses berlangsung beberapa saat dan halaman akan tetap aman. Lanjutkan?',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Update',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#059669'
+      }).then(function (r) {
+        if (!r.isConfirmed) return;
+
+        Swal.fire({
+          title: 'Memperbarui...',
+          text: 'Mohon tunggu, jangan tutup halaman.',
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          showConfirmButton: false,
+          didOpen: function () {
+            Swal.showLoading();
+            var form = new FormData();
+            form.append('csrf_token', btnUpdate.dataset.csrf);
+            fetch(btnUpdate.dataset.url, { method: 'POST', body: form })
+              .then(function (resp) { return resp.json(); })
+              .then(function (res) {
+                if (res.ok) {
+                  Swal.fire({ icon: 'success', title: 'Update Berhasil', text: res.message, confirmButtonText: 'OK' });
+                } else {
+                  Swal.fire({ icon: 'error', title: 'Update Gagal', text: res.message, confirmButtonText: 'OK' });
+                }
+              })
+              .catch(function () {
+                Swal.fire({ icon: 'error', title: 'Update Gagal', text: 'Terjadi kesalahan koneksi.', confirmButtonText: 'OK' });
+              });
+          }
+        });
+      });
+    });
+  }
 }
 
 // Initialize app when DOM is ready

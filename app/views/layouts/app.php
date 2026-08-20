@@ -99,14 +99,14 @@ if (has_role('Administrator')) {
 <!-- ======================= SIDEBAR ======================= -->
 <div id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-emerald-600 text-emerald-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 flex flex-col">
     <!-- Sticky Header -->
-    <div class="flex items-center gap-3 px-5 py-4 border-b border-emerald-700 shrink-0 sticky top-0 bg-emerald-600 z-10">
+    <div class="flex items-center gap-3 px-5 h-16 border-b border-emerald-700 shrink-0 sticky top-0 bg-emerald-600 z-10">
         <?php if (!empty($profile['logo']) && file_exists(UPLOAD_DIR . '/' . $profile['logo'])): ?>
-            <img src="<?= asset('uploads/' . e($profile['logo'])) ?>" class="h-10 w-10 object-cover drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]" alt="logo">
+            <img src="<?= asset('uploads/' . e($profile['logo'])) ?>" class="h-10 w-10 shrink-0 object-contain drop-shadow-[0_0_4px_rgba(255,255,255,0.8)]" alt="logo">
         <?php else: ?>
-            <div class="h-10 w-10 rounded-full bg-emerald-700 flex items-center justify-center font-bold text-white"><?= e(mb_substr($profile['nama_koperasi'] ?? 'KS', 0, 2)) ?></div>
+            <div class="h-10 w-10 shrink-0 rounded-full bg-emerald-700 flex items-center justify-center font-bold text-white"><?= e(mb_substr($profile['nama_koperasi'] ?? 'KS', 0, 2)) ?></div>
         <?php endif; ?>
-        <div>
-            <div class="font-semibold text-sm leading-tight text-white"><?= e($profile['nama_koperasi'] ?? APP_NAME) ?></div>
+        <div class="min-w-0">
+            <div class="font-semibold text-sm leading-tight text-white truncate"><?= e($profile['nama_koperasi'] ?? APP_NAME) ?></div>
             <div class="text-xs text-emerald-200 truncate"><?= e($profile['nama_sekolah'] ?? '') ?></div>
         </div>
     </div>
@@ -197,10 +197,15 @@ if (has_role('Administrator')) {
                         <?= e(strtoupper(mb_substr($user['name'], 0, 2))) ?>
                     </div>
                 </button>
-                <div id="userMenuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
+                <div id="userMenuDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
                     <a href="<?= url('password') ?>" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
                         <?= icon('key', 'w-4 h-4 text-slate-400') ?> Ganti Password
                     </a>
+                    <?php if (has_role('Administrator')): ?>
+                        <button type="button" id="btnUpdateSistem" data-csrf="<?= e(csrf_token()) ?>" data-url="<?= url('pengaturan', ['action' => 'updateSistem']) ?>" class="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left">
+                            <?= icon('refresh', 'w-4 h-4 text-slate-400') ?> Update Sistem
+                        </button>
+                    <?php endif; ?>
                     <div class="border-t border-slate-100 my-1"></div>
                     <a href="<?= url('logout') ?>" id="linkLogout" class="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
                         <?= icon('logout', 'w-4 h-4') ?> Keluar
