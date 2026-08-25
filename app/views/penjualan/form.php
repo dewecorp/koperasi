@@ -79,6 +79,24 @@ $tanggalForm = input('tanggal', date('Y-m-d'));
     </div>
 </div>
 
+<link rel="stylesheet" href="<?= asset('assets/vendor/select2/css/select2.min.css') ?>">
+<style>
+    /* Samakan tampilan select2 dengan class .input aplikasi */
+    .select2-container--default .select2-selection--single { background-color: #fff; border: 1px solid #cbd5e1; border-radius: 0.5rem; height: 39px; }
+    .select2-container--default .select2-selection--single .select2-selection__rendered { color: #1e293b; font-size: 0.875rem; line-height: 37px; padding-left: 12px; padding-right: 26px; }
+    .select2-container--default .select2-selection--single .select2-selection__placeholder { color: #94a3b8; }
+    .select2-container--default .select2-selection--single .select2-selection__arrow { height: 37px; right: 6px; }
+    .select2-container--default .select2-selection--single .select2-selection__clear { color: #94a3b8; }
+    .select2-container--default.select2-container--focus .select2-selection--single,
+    .select2-container--default.select2-container--open .select2-selection--single { border-color: #059669; box-shadow: 0 0 0 3px rgba(5,150,105,0.15); }
+    .select2-dropdown { border-color: #cbd5e1; border-radius: 0.5rem; overflow: hidden; font-size: 0.875rem; }
+    .select2-container--default .select2-search--dropdown .select2-search__field { border: 1px solid #cbd5e1; border-radius: 0.375rem; }
+    .select2-container--default .select2-search--dropdown .select2-search__field:focus { outline: none; border-color: #059669; box-shadow: 0 0 0 3px rgba(5,150,105,0.15); }
+    .select2-container--default .select2-results__option[aria-selected] { padding: 0.375rem 0.75rem; }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] { background-color: #059669; color: #fff; }
+</style>
+<script src="<?= asset('assets/vendor/jquery/jquery-3.7.1.min.js') ?>"></script>
+<script src="<?= asset('assets/vendor/select2/js/select2.min.js') ?>"></script>
 <script>
 (function () {
     var PRODUK = <?= json_encode($produkData) ?>;
@@ -111,23 +129,26 @@ $tanggalForm = input('tanggal', date('Y-m-d'));
             opts += '<option value="' + p.id + '" data-harga="' + p.harga + '" data-stok="' + p.stok + '" data-nama="' + p.nama + '"' + sel + '>' + p.kode + ' - ' + p.nama + ' (stok: ' + p.stok + ')</option>';
         });
         row.innerHTML =
-            '<div class="col-span-4"><select name="product_id[]" class="input i-produk text-sm">' + opts + '</select></div>' +
+            '<div class="col-span-4"><select name="product_id[]" class="input i-produk text-sm" data-placeholder="- Pilih barang -">' + opts + '</select></div>' +
             '<div class="col-span-1"><input type="number" name="qty[]" class="input i-qty text-sm" min="0.01" step="0.01" value="' + (pre.qty || '') + '"></div>' +
             '<div class="col-span-2"><input type="text" name="harga[]" class="input i-harga text-sm" inputmode="numeric" value="' + (pre.harga || '') + '"></div>' +
             '<div class="col-span-2"><input type="text" name="diskon[]" class="input i-diskon text-sm" inputmode="numeric" value="' + (pre.diskon || '') + '"></div>' +
             '<div class="col-span-2 i-sub text-sm font-semibold text-right">Rp 0</div>' +
             '<div class="col-span-1 text-right"><button type="button" class="btn btn-ghost p-1.5 btn-hapus">' + '&times;' + '</button></div>';
 
-        row.querySelector('.i-produk').addEventListener('change', function () {
+        var selEl = row.querySelector('.i-produk');
+        $(selEl).on('change', function () {
             var opt = this.options[this.selectedIndex];
             row.querySelector('.i-harga').value = opt.dataset.harga || '';
             row.querySelector('.i-qty').value = 1;
             hitungTotal();
         });
+        $(selEl).select2({ width: '100%', placeholder: $(selEl).data('placeholder'), allowClear: true });
         row.querySelectorAll('.i-qty,.i-harga,.i-diskon').forEach(function (el) {
             el.addEventListener('input', hitungTotal);
         });
         row.querySelector('.btn-hapus').addEventListener('click', function () {
+            $(selEl).select2('destroy');
             row.remove();
             hitungTotal();
         });
