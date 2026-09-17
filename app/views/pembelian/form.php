@@ -4,7 +4,7 @@ foreach ($produk as $p) {
     $produkData[] = ['id' => (int)$p['id'], 'nama' => $p['name'], 'kode' => $p['kode'], 'barcode' => $p['barcode'] ?? '', 'harga' => (float)$p['harga_beli'], 'satuan' => $p['satuan']];
 }
 ?>
-<div class="max-w-5xl">
+<div class="w-full">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <div class="flex items-center justify-between mb-5">
             <h2 class="font-semibold text-slate-800">Faktur Pembelian Baru</h2>
@@ -83,7 +83,7 @@ foreach ($produk as $p) {
 
     function rupiah(v) { return 'Rp ' + Number(v || 0).toLocaleString('id-ID'); }
 
-    function angka(v) { return Number(String(v).replace(/[^\d.-]/g, '')) || 0; }
+    function angka(v) { return Number(String(v).replace(/\./g,'').replace(/,/g,'.').replace(/[^0-9.-]/g,'')) || 0; }
 
     function hitungTotal() {
         var total = 0;
@@ -108,13 +108,14 @@ foreach ($produk as $p) {
         });
         row.innerHTML =
             '<div class="col-span-4"><select name="product_id[]" class="input i-produk text-sm">' + opts + '</select></div>' +
-            '<div class="col-span-2"><input type="number" name="qty[]" class="input i-qty text-sm" min="0.01" step="0.01" value="' + (pre.qty || '') + '"></div>' +
+            '<div class="col-span-2"><input type="number" name="qty[]" class="input i-qty text-sm" min="1" step="1" value="' + (pre.qty || '') + '"></div>' +
             '<div class="col-span-3"><input type="text" name="harga[]" class="input i-harga text-sm" inputmode="numeric" value="' + (pre.harga || '') + '"></div>' +
             '<div class="col-span-2 i-sub text-sm font-semibold text-right">Rp 0</div>' +
             '<div class="col-span-1 text-right"><button type="button" class="btn btn-ghost p-1.5 btn-hapus">&times;</button></div>';
 
         row.querySelector('.i-produk').addEventListener('change', function () {
-            row.querySelector('.i-harga').value = this.options[this.selectedIndex].dataset.harga || '';
+            var h = this.options[this.selectedIndex].dataset.harga || '';
+            row.querySelector('.i-harga').value = h ? Number(h).toLocaleString('id-ID') : '';
             row.querySelector('.i-qty').value = 1;
             hitungTotal();
         });

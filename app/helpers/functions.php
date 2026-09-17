@@ -76,7 +76,12 @@ function route_path(string $page, array &$params): string
 function asset(string $path): string
 {
     $prefix = defined('ROOT_ENTRY') ? '/public' : '';
-    return site_root() . $prefix . '/' . ltrim($path, '/');
+    $url = site_root() . $prefix . '/' . ltrim($path, '/');
+    $file = APP_ROOT . '/public/' . ltrim($path, '/');
+    if (is_file($file)) {
+        $url .= '?v=' . filemtime($file);
+    }
+    return $url;
 }
 
 /**

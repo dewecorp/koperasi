@@ -53,27 +53,6 @@ $isBatal = $tx['status'] === 'DIBATALKAN';
             </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-            <h3 class="font-semibold text-slate-800 mb-3">Bukti Transaksi</h3>
-            <div class="flex items-start justify-between gap-4">
-                <div>
-                    <?= attachment_badges($attachments) ?>
-                    <?php if (has_role('Administrator') || has_role('Bendahara')): foreach ($attachments as $att): ?>
-                        <form method="post" action="<?= url('penjualan', ['action' => 'delete_att', 'id' => $att['id'], 'tx' => $tx['id']]) ?>" class="inline">
-                            <?= csrf_field() ?>
-                            <button type="submit" class="text-[11px] text-red-600 hover:text-red-800 underline ml-1" onclick="return appConfirmSubmit(event, 'Hapus bukti ini?')">hapus</button>
-                        </form>
-                    <?php endforeach; endif; ?>
-                </div>
-                <?php if (!$isBatal && (has_role('Administrator') || has_role('Bendahara') || has_role('Petugas'))): ?>
-                    <form method="post" action="<?= url('penjualan', ['action' => 'upload', 'id' => $tx['id']]) ?>" enctype="multipart/form-data" class="flex items-center gap-2">
-                        <?= csrf_field() ?>
-                        <input type="file" name="bukti" class="input text-sm !w-56" accept=".jpg,.jpeg,.png,.pdf" required>
-                        <button type="submit" class="btn btn-secondary"><?= icon('upload', 'w-4 h-4') ?> Upload</button>
-                    </form>
-                <?php endif; ?>
-            </div>
-        </div>
     </div>
 
     <div class="space-y-4">

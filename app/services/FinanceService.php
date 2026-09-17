@@ -623,7 +623,7 @@ class FinanceService extends Model
         }
     }
 
-    /** Batalkan pembayaran hutang. */
+     /** Batalkan pembayaran hutang. */
     public function cancelBayarHutang(int $payId, string $alasan): void
     {
         if (trim($alasan) === '') {
@@ -645,5 +645,47 @@ class FinanceService extends Model
             $this->pdo->rollBack();
             throw $e;
         }
+    }
+
+    public function updatePenjualan(int $txId, string $tanggal, ?int $customerId, string $metode, array $items, string $keterangan = '', string $tahunAjaran = ''): void
+    {
+        if (empty($items)) throw new RuntimeException('Minimal satu barang.');
+        if ($tahunAjaran === '') $tahunAjaran = tahun_ajaran_aktif();
+        $tx = $this->one('SELECT * FROM transactions WHERE id = ?', [$txId]);
+        if (!$tx) throw new RuntimeException('Transaksi tidak ditemukan.');
+        if ($tx['status'] === 'DIBATALKAN') throw new RuntimeException('Transaksi dibatalkan tidak dapat diubah.');
+        $metodeLama = $tx['payment_method'];
+        $no = $tx['no_transaksi'];
+        $total = 0; foreach ($items as $i) $total += (float)$i['subtotal'];
+        $this->pdo->beginTransaction();
+        try {
+            $this->execute('UPDATE transactions SET tanggal=?, customer_id=?, total=?, payment_method=?, keterangan=? WHERE id=?', [$tanggal, $customerId, $total, $metode, $keterangan, $txId]);
+            $this->execute('UPDATE cash_transactions SET tanggal=? WHERE related_type="transactions" AND related_id=? AND status="AKTIF"', [$tanggal, $txId]);
+            $this->execute('UPDATE receivables SET tanggal=? WHERE transaction_id=? AND status="AKTIF"', [$tanggal, $txId]);
+            $oldDetails = $this->all('SELECT * FROM transaction_details WHERE transaction_id=?', [$txId]);
+            $this->execute('DELETE FROM transaction_details WHERE transaction_id=?', [$txId]);
+            $this->execute('UPDATE stock_movements SET status="DIBATALKAN" WHERE no_referensi=? AND status="AKTIF"', [$no]);
+            foreach ($oldDetails as $d) $this->recalcStok((int)$d['product_id']);
+            foreach ($items as $i) {
+                $pid=(int)$i['product_id']; $qty=(float)$i['qty']; $harga=(float)$i['harga']; $diskon=(float)($i['diskon']??0); $sub=(float)$i['subtotal'];
+                $this->execute('INSERT INTO transaction_details (transaction_id, product_id, qty, harga, diskon, subtotal) VALUES (?,?,?,?,?,?)', [$txId,$pid,$qty,$harga,$diskon,$sub]);
+                $stok = $this->stokProduk($pid);
+                if ($qty > $stok) { $produk=$this->one('SELECT name FROM products WHERE id=?',[$pid]); throw new RuntimeException('Stok tidak cukup untuk "'.($produk['name']??'').'". Stok: '.angka($stok).', diminta: '.angka($qty)); }
+                $this->execute('INSERT INTO stock_movements (product_id, tahun_ajaran, tanggal, no_referensi, type, qty, keterangan, status, user_id) VALUES (?,?,?,?, "keluar", ?, ?, "AKTIF", ?)', [$pid,$tahunAjaran,$tanggal,$no,$qty,'Penjualan '.$no,$this->uid()]);
+                $this->recalcStok($pid);
+            }
+            $cash = $this->one('SELECT * FROM cash_transactions WHERE related_type="transactions" AND related_id=? AND status="AKTIF" LIMIT 1', [$txId]);
+            $recv = $this->one('SELECT * FROM receivables WHERE transaction_id=? AND status="AKTIF" LIMIT 1', [$txId]);
+            if ($metode === 'tunai') {
+                if ($recv) { $this->execute('UPDATE receivables SET status="DIBATALKAN" WHERE id=?', [$recv['id']]); }
+                if ($cash) { $this->execute('UPDATE cash_transactions SET nominal=?, kategori="Penjualan", keterangan=? WHERE id=?', [$total,'Penjualan tunai '.$no,$cash['id']]); }
+                else { $this->execute('INSERT INTO cash_transactions (tahun_ajaran, tanggal, no_transaksi, jenis, kategori, nominal, keterangan, status, related_type, related_id, user_id) VALUES (?,?,?,?, "masuk", "Penjualan", ?, ?, "AKTIF", "transactions", ?, ?)', [$tahunAjaran,$tanggal,$no,$total,'Penjualan tunai '.$no,$txId,$this->uid()]); }
+            } else {
+                if ($cash) { $this->execute('UPDATE cash_transactions SET status="DIBATALKAN" WHERE id=?', [$cash['id']]); }
+                if ($recv) { $this->execute('UPDATE receivables SET total=?, customer_id=? WHERE id=?', [$total,$customerId,$recv['id']]); }
+                else { $this->execute('INSERT INTO receivables (customer_id, transaction_id, tahun_ajaran, tanggal, no_transaksi, total, status) VALUES (?,?,?,?,?,?, "AKTIF")', [$customerId,$txId,$tahunAjaran,$tanggal,$no,$total]); }
+            }
+            $this->pdo->commit();
+        } catch (Throwable $e) { $this->pdo->rollBack(); throw $e; }
     }
 }

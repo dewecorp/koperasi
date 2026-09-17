@@ -215,12 +215,12 @@ if (has_role('Administrator')) {
     </header>
 
     <!-- Page Header -->
-    <div class="px-4 sm:px-6 py-4 sm:py-6">
+    <div class="px-4 sm:px-6 pt-4 sm:pt-6 pb-2">
         <h1 class="text-xl sm:text-2xl font-bold text-slate-800"><?= e($pageTitle ?? 'Dashboard') ?></h1>
     </div>
 
-<!-- Content -->
-    <main class="flex-1 p-4 sm:p-6 pb-12">
+    <!-- Content -->
+    <main class="flex-1 px-4 sm:px-6 pt-2 pb-8">
         <?= flash_swal_scripts() ?>
 
         <?= $content ?>

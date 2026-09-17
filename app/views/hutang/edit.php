@@ -1,5 +1,5 @@
 <?php ?>
-<div class="max-w-2xl">
+<div class="w-full">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <div class="flex items-center justify-between mb-5">
             <div>

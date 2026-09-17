@@ -13,7 +13,7 @@ if ($editId) {
     }
 }
 ?>
-<div class="max-w-5xl">
+<div class="w-full">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
         <div class="flex flex-col sm:flex-row sm:items-center gap-3 justify-between mb-4">
             <form method="get" action="<?= url($pageKey) ?>" class="js-filter-form flex gap-2 flex-1 max-w-md">

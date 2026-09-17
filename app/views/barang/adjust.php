@@ -4,7 +4,7 @@ $keterangan = trim(input('keterangan', ''));
 $jenis = input('jenis', 'masuk');
 $qty = input('qty', '');
 ?>
-<div class="max-w-2xl">
+<div class="w-full">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <h2 class="font-semibold text-slate-800 mb-1"><?= e($barang['name']) ?></h2>
         <p class="text-sm text-slate-500 mb-4">Stok saat ini: <b class="<?= $stok <= (float)$barang['stock_minimum'] ? 'text-red-600' : '' ?>"><?= angka($stok) ?> <?= e($barang['satuan']) ?></b></p>

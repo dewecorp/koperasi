@@ -5,7 +5,7 @@ $old = function (string $key, $default = '') use ($barang) {
 };
 $scanUrl = url('barang', ['action' => 'cariBarcode']);
 ?>
-<div class="max-w-3xl">
+<div class="w-full">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <form method="post" action="<?= url('barang', ['action' => 'store', 'id' => $isEdit ? $barang['id'] : null]) ?>" id="formBarang" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <?= csrf_field() ?>

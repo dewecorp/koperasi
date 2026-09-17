@@ -98,10 +98,11 @@ class PembelianController extends Controller
         $qtys = input('qty', []);
         $hargas = input('harga', []);
 
+        $parseRp = function ($v) { return (float)preg_replace('/[^\d]/', '', (string)$v); };
         $items = [];
         foreach ($productIds as $i => $pid) {
-            $qty = (float)($qtys[$i] ?? 0);
-            $harga = (float)($hargas[$i] ?? 0);
+            $qty = (int)$parseRp($qtys[$i] ?? 0);
+            $harga = $parseRp($hargas[$i] ?? 0);
             if ($qty <= 0 || $harga <= 0 || !$pid) {
                 continue;
             }

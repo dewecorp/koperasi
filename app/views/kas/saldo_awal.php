@@ -1,4 +1,4 @@
-<div class="max-w-2xl">
+<div class="w-full">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         <div class="mb-4 text-sm text-slate-500">Tahun Ajaran Aktif: <b class="text-emerald-600"><?= e($tahunAjaran) ?></b></div>
         <div class="mb-4 px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 text-sm">

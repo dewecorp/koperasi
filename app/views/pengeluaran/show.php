@@ -5,7 +5,7 @@ $stmt = $pdo->prepare('SELECT * FROM cash_transactions WHERE related_type = "tra
 $stmt->execute([$tx['id']]);
 $cash = $stmt->fetchAll();
 ?>
-<div class="max-w-3xl">
+<div class="w-full">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
         <div class="flex items-start justify-between gap-3 mb-4">
             <div>

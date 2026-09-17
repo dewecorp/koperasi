@@ -101,11 +101,12 @@ class PenjualanController extends Controller
         $hargas = input('harga', []);
         $diskons = input('diskon', []);
 
+        $parseRp = function ($v) { return (float)preg_replace('/[^\d]/', '', (string)$v); };
         $items = [];
         foreach ($productIds as $i => $pid) {
-            $qty = (float)($qtys[$i] ?? 0);
-            $harga = (float)($hargas[$i] ?? 0);
-            $diskon = (float)($diskons[$i] ?? 0);
+            $qty = (int)$parseRp($qtys[$i] ?? 0);
+            $harga = $parseRp($hargas[$i] ?? 0);
+            $diskon = $parseRp($diskons[$i] ?? 0);
             if ($qty <= 0 || $harga <= 0 || !$pid) {
                 continue;
             }
@@ -156,9 +157,18 @@ class PenjualanController extends Controller
     {
         $this->guard(['Administrator', 'Bendahara']);
         $tx = $this->load($id);
+        $pdo = db();
+        $stmt = $pdo->prepare('SELECT td.*, p.kode, p.name AS nama_barang, p.satuan FROM transaction_details td JOIN products p ON p.id = td.product_id WHERE td.transaction_id = ?');
+        $stmt->execute([$id]);
+        $details = $stmt->fetchAll();
+        $produk = $pdo->query('SELECT p.*, c.name AS kategori FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.is_active = 1 ORDER BY p.name')->fetchAll();
+        $pelanggan = $pdo->query('SELECT * FROM customers WHERE is_active = 1 ORDER BY name')->fetchAll();
         $this->render('penjualan/edit', [
             'pageTitle' => 'Ubah Penjualan',
             'tx' => $tx,
+            'details' => $details,
+            'produk' => $produk,
+            'pelanggan' => $pelanggan,
         ]);
     }
 
@@ -174,36 +184,38 @@ class PenjualanController extends Controller
             flash('error', 'Transaksi yang dibatalkan tidak dapat diubah.');
             redirect('penjualan&action=show&id=' . $id);
         }
-
         $tanggal = input('tanggal', $tx['tanggal']);
         $keterangan = trim(input('keterangan', ''));
-
+        $metode = input('metode', $tx['payment_method']);
+        $customerId = input('customer_id', null) ?: null;
+        $productIds = input('product_id', null);
+        if (is_array($productIds)) {
+            $errors = validate(['tanggal' => 'date']);
+            if ($errors) { foreach ($errors as $e) flash('error', $e); redirect('penjualan&action=edit&id=' . $id); }
+            if ($metode === 'kredit' && !$customerId) { flash('error','Kredit wajib pilih pelanggan.'); redirect('penjualan&action=edit&id=' . $id); }
+            $qtys = input('qty', []); $hargas = input('harga', []); $diskons = input('diskon', []);
+            $parseRp = function($v){ return (float)preg_replace('/[^\d]/','',(string)$v); };
+            $items = [];
+            foreach ($productIds as $i => $pid) {
+                $qty=(int)$parseRp($qtys[$i]??0); $harga=$parseRp($hargas[$i]??0); $diskon=$parseRp($diskons[$i]??0);
+                if ($qty<=0||$harga<=0||!$pid) continue;
+                $items[]=['product_id'=>$pid,'qty'=>$qty,'harga'=>$harga,'diskon'=>$diskon,'subtotal'=>max(0,$qty*$harga-$diskon)];
+            }
+            if (empty($items)) { flash('error','Minimal satu barang valid.'); redirect('penjualan&action=edit&id=' . $id); }
+            $fin=new FinanceService();
+            try { $fin->updatePenjualan((int)$id,$tanggal,$customerId,$metode,$items,$keterangan); audit_log('UBAH PENJUALAN',$tx['no_transaksi']); flash('success','Penjualan diperbarui (item/stok/kas disesuaikan).'); redirect('penjualan&action=show&id=' . $id); }
+            catch (Throwable $e) { flash('error',$e->getMessage()); redirect('penjualan&action=edit&id=' . $id); }
+        }
         $errors = validate(['tanggal' => 'date']);
-        if ($errors) {
-            foreach ($errors as $e) flash('error', $e);
-            redirect('penjualan&action=edit&id=' . $id);
-        }
-
-        $pdo = db();
-        $pdo->beginTransaction();
+        if ($errors) { foreach ($errors as $e) flash('error', $e); redirect('penjualan&action=edit&id=' . $id); }
+        $pdo=db(); $pdo->beginTransaction();
         try {
-            $pdo->prepare('UPDATE transactions SET tanggal = ?, keterangan = ? WHERE id = ?')
-                ->execute([$tanggal, $keterangan, $id]);
-            // Perbarui tanggal pada kas & piutang terkait agar urutannya konsisten
-            $pdo->prepare('UPDATE cash_transactions SET tanggal = ? WHERE related_type = "transactions" AND related_id = ? AND status = "AKTIF"')
-                ->execute([$tanggal, $id]);
-            $pdo->prepare('UPDATE receivables SET tanggal = ? WHERE transaction_id = ? AND status = "AKTIF"')
-                ->execute([$tanggal, $id]);
+            $pdo->prepare('UPDATE transactions SET tanggal = ?, keterangan = ? WHERE id = ?')->execute([$tanggal,$keterangan,$id]);
+            $pdo->prepare('UPDATE cash_transactions SET tanggal = ? WHERE related_type = "transactions" AND related_id = ? AND status="AKTIF"')->execute([$tanggal,$id]);
+            $pdo->prepare('UPDATE receivables SET tanggal = ? WHERE transaction_id = ? AND status="AKTIF"')->execute([$tanggal,$id]);
             $pdo->commit();
-        } catch (Throwable $e) {
-            $pdo->rollBack();
-            flash('error', 'Gagal mengubah: ' . $e->getMessage());
-            redirect('penjualan&action=edit&id=' . $id);
-        }
-
-        audit_log('UBAH PENJUALAN', $tx['no_transaksi']);
-        flash('success', 'Penjualan diperbarui.');
-        redirect('penjualan&action=show&id=' . $id);
+        } catch (Throwable $e) { $pdo->rollBack(); flash('error','Gagal mengubah: '.$e->getMessage()); redirect('penjualan&action=edit&id=' . $id); }
+        audit_log('UBAH PENJUALAN',$tx['no_transaksi']); flash('success','Penjualan diperbarui.'); redirect('penjualan&action=show&id=' . $id);
     }
 
     public function cancel(?string $id = null): void

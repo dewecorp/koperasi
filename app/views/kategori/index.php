@@ -1,5 +1,5 @@
 <?php $id = (int)input('edit', 0); ?>
-<div class="max-w-4xl">
+<div class="w-full">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
         <form method="get" action="<?= url('kategori') ?>" class="js-filter-form flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-5">
             <label class="label !mb-0">Tipe Kategori</label>

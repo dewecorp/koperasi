@@ -351,11 +351,18 @@ function inputRupiahValue(el) {
   });
 
   // Sebelum submit, kembalikan nilai bersih (tanpa titik) supaya server menerima angka utuh.
+  // Termasuk cart penjualan/pembelian (name="qty[]", "harga[]", "diskon[]")
   document.addEventListener('submit', function (e) {
     e.target.querySelectorAll(MONEY_SELECTOR).forEach(function (el) {
       if (el.dataset.raw !== undefined) {
         el.value = el.dataset.raw === '' ? '' : Number(el.dataset.raw).toFixed(0);
+      } else {
+        var d = String(el.value).replace(/[^\d]/g, '');
+        if (el.value !== '' && d !== el.value) el.value = d;
       }
+    });
+    e.target.querySelectorAll('input[name="qty[]"], input[name="harga[]"], input[name="diskon[]"]').forEach(function (el) {
+      el.value = String(el.value).replace(/[^\d]/g, '');
     });
   }, true);
 
@@ -366,5 +373,144 @@ function inputRupiahValue(el) {
         formatMoney(el);
       }
     });
+  });
+})();
+
+/* ============ Custom select rounded (agar dropdown ikut rounded seperti .input) ============ */
+(function () {
+  function closeAll() {
+    document.querySelectorAll('.custom-select-list').forEach(function (l) { l.classList.add('hidden'); });
+    document.querySelectorAll('.custom-select-button').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); b.classList.remove('is-open'); });
+  }
+
+  function syncLabel(sel, label, list) {
+    var opt = sel.options[sel.selectedIndex];
+    label.textContent = opt ? opt.textContent.trim() : '';
+    if (list) {
+      list.querySelectorAll('.custom-select-option').forEach(function (o) {
+        o.classList.toggle('is-active', o.dataset.value === sel.value);
+      });
+    }
+  }
+
+  function enhanceSelect(sel) {
+    if (!sel || sel.dataset.csEnhanced === '1' || sel.multiple) return;
+    if (sel.dataset.noCs === '1' || sel.hasAttribute('data-no-cs')) return;
+    if (sel.closest('.custom-select-wrap')) return;
+    if (sel.closest('.swal2-container') || sel.classList.contains('swal2-select')) return;
+    if (sel.classList.contains('select2-hidden-accessible') || sel.dataset.select2Id || sel.classList.contains('select2-offscreen')) return;
+    sel.dataset.csEnhanced = '1';
+
+    var wrap = document.createElement('div');
+    wrap.className = 'custom-select-wrap';
+    var wClasses = (sel.className.match(/(?:^|\s)(w-\S+|sm:w-\S+|md:w-\S+|lg:w-\S+|xl:w-\S+|flex-\S+|flex|basis-\S+|min-w\S+|max-w\S+)/g) || []).join(' ');
+    if (wClasses) wrap.className += ' ' + wClasses.trim();
+
+    sel.parentNode.insertBefore(wrap, sel);
+    wrap.appendChild(sel);
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'custom-select-button';
+    btn.setAttribute('aria-haspopup', 'listbox');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.disabled = sel.disabled;
+    if (sel.id) btn.id = sel.id + '-cs-btn';
+
+    var label = document.createElement('span');
+    label.style.cssText = 'flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;';
+    btn.appendChild(label);
+
+    var arrow = document.createElement('span');
+    arrow.className = 'custom-select-arrow';
+    arrow.setAttribute('aria-hidden', 'true');
+    btn.appendChild(arrow);
+
+    var list = document.createElement('div');
+    list.className = 'custom-select-list hidden';
+    list.setAttribute('role', 'listbox');
+
+    Array.prototype.forEach.call(sel.options, function (opt) {
+      var o = document.createElement('button');
+      o.type = 'button';
+      o.className = 'custom-select-option';
+      o.setAttribute('role', 'option');
+      o.dataset.value = opt.value;
+      o.textContent = opt.textContent.trim();
+      if (opt.disabled) o.disabled = true;
+      if (opt.value === sel.value) o.classList.add('is-active');
+      o.addEventListener('click', function () {
+        if (o.disabled) return;
+        sel.value = o.dataset.value;
+        syncLabel(sel, label, list);
+        closeAll();
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+        sel.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+      list.appendChild(o);
+    });
+
+    syncLabel(sel, label, list);
+
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var isHidden = list.classList.contains('hidden');
+      closeAll();
+      if (isHidden) {
+        list.classList.remove('hidden');
+        btn.setAttribute('aria-expanded', 'true');
+        btn.classList.add('is-open');
+
+        // Deteksi posisi layar: jika ruang bawah sempit, buka ke atas (drop-up)
+        var btnRect = btn.getBoundingClientRect();
+        var spaceBelow = window.innerHeight - btnRect.bottom;
+        var spaceAbove = btnRect.top;
+        var listHeight = list.offsetHeight || 220;
+        var openUp = spaceBelow < listHeight && spaceAbove > spaceBelow;
+        list.classList.toggle('drop-up', openUp);
+
+        // Auto-scroll ke opsi yang sedang aktif
+        var activeOpt = list.querySelector('.custom-select-option.is-active');
+        if (activeOpt) {
+          activeOpt.scrollIntoView({ block: 'nearest' });
+        }
+      }
+    });
+
+    sel.addEventListener('change', function () { syncLabel(sel, label, list); });
+
+    var obs = new MutationObserver(function () {
+      btn.disabled = sel.disabled;
+      syncLabel(sel, label, list);
+    });
+    obs.observe(sel, { attributes: true, attributeFilter: ['disabled'] });
+
+    wrap.appendChild(btn);
+    wrap.appendChild(list);
+  }
+
+  function enhanceAll(root) {
+    (root || document).querySelectorAll('select').forEach(enhanceSelect);
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    enhanceAll(document);
+    document.addEventListener('click', closeAll);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeAll();
+    });
+    var mo = new MutationObserver(function (muts) {
+      muts.forEach(function (m) {
+        m.addedNodes.forEach(function (n) {
+          if (n.nodeType !== 1) return;
+          if (n.closest && n.closest('.swal2-container')) return;
+          if (n.classList && n.classList.contains('swal2-container')) return;
+          if (n.classList && (n.classList.contains('select2-container') || n.classList.contains('select2'))) return;
+          if (n.tagName === 'SELECT') enhanceSelect(n);
+          else if (n.querySelectorAll) n.querySelectorAll('select').forEach(enhanceSelect);
+        });
+      });
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
   });
 })();
