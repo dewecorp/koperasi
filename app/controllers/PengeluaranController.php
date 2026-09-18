@@ -60,10 +60,14 @@ class PengeluaranController extends Controller
         $tahunAjaran = input('tahun_ajaran', tahun_ajaran_aktif());
         $tanggal = input('tanggal', date('Y-m-d'));
         $kategoriId = (int)input('category_id', 0);
-        $nominal = (float)input('nominal', 0);
+        $rawNominal = trim((string)input('nominal', 0));
+        $rawNominal = str_replace(['.', ' ', "\xC2\xA0"], '', $rawNominal);
+        $rawNominal = str_replace(',', '.', $rawNominal);
+        $nominal = (float)$rawNominal;
         $penerima = trim(input('penerima', ''));
         $keterangan = trim(input('keterangan', ''));
 
+        $_POST['nominal'] = (string)$nominal;
         $errors = validate(['tanggal' => 'date', 'nominal' => 'numeric|min:1']);
         if ($errors) {
             foreach ($errors as $e) flash('error', $e);
@@ -164,10 +168,14 @@ class PengeluaranController extends Controller
 
         $tanggal = input('tanggal', $tx['tanggal']);
         $kategoriId = (int)input('category_id', $tx['category_id']);
-        $nominal = (float)input('nominal', $tx['total']);
+        $rawNominal = trim((string)input('nominal', $tx['total']));
+        $rawNominal = str_replace(['.', ' ', "\xC2\xA0"], '', $rawNominal);
+        $rawNominal = str_replace(',', '.', $rawNominal);
+        $nominal = (float)$rawNominal;
         $penerima = trim(input('penerima', ''));
         $keterangan = trim(input('keterangan', ''));
 
+        $_POST['nominal'] = (string)$nominal;
         $errors = validate(['tanggal' => 'date', 'nominal' => 'numeric|min:1']);
         if ($errors) {
             foreach ($errors as $e) flash('error', $e);

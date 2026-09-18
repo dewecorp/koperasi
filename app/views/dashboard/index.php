@@ -184,9 +184,13 @@ if (!function_exists('aktivIconUbah')) {
                             </span>
                             <div class="bg-slate-50 hover:bg-white border border-slate-200 hover:border-emerald-200 rounded-xl px-4 py-2.5 transition shadow-sm">
                                 <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                    <span class="font-semibold text-sm text-slate-800"><?= e($a['aktivitas']) ?></span>
+                                    <span class="font-semibold text-sm text-slate-800"><?= e(mb_convert_case($a['aktivitas'], MB_CASE_TITLE, 'UTF-8')) ?></span>
                                     <span class="text-[11px] px-2 py-0.5 rounded-full <?= $warna ?> text-white font-medium"><?= e($a['username']) ?></span>
-                                    <span class="ml-auto text-[11px] text-slate-400 waktu-lalu" data-ts="<?= $ts ?>"><?= tanggal_waktu($a['created_at']) ?></span>
+                                    <span class="ml-auto text-[11px] text-slate-400 flex items-center gap-1">
+                                        <span><?= tanggal_waktu($a['created_at']) ?></span>
+                                        <span class="text-slate-300">•</span>
+                                        <span class="waktu-lalu" data-ts="<?= $ts ?>"></span>
+                                    </span>
                                 </div>
                                 <?php if (!empty($a['detail'])): ?>
                                     <div class="text-xs text-slate-500 mt-1 break-words"><?= e($a['detail']) ?></div>
@@ -205,7 +209,7 @@ if (!function_exists('aktivIconUbah')) {
     function waktuLalu(ts) {
         var now = Math.floor(Date.now() / 1000);
         var s = Math.max(0, now - ts);
-        if (s < 60) return 'Baru saja';
+        if (s < 60) return 'baru saja';
         var m = Math.floor(s / 60);
         if (m < 60) return m + ' menit lalu';
         var h = Math.floor(m / 60);

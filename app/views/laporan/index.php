@@ -1,10 +1,4 @@
 <?php
-$tabs = [
-    'kas' => 'Laporan Kas', 'penjualan' => 'Penjualan', 'pembelian' => 'Pembelian',
-    'pemasukan' => 'Pemasukan', 'pengeluaran' => 'Pengeluaran', 'labarugi' => 'Laba/Rugi',
-    'piutang' => 'Piutang', 'hutang' => 'Hutang', 'stok' => 'Stok',
-    'bulanan' => 'Rekap Bulanan', 'tahunan' => 'Rekap Tahunan',
-];
 $params = ['tab' => $tab];
 if (!($no_periode ?? false)) {
     $params['dari'] = $dari;
@@ -15,11 +9,6 @@ if ($tab === 'bulanan' && isset($tahun)) {
 }
 $filterParams = array_diff_key($params, ['tab' => '']);
 ?>
-<div class="mb-4 flex gap-2 overflow-x-auto pb-1 no-print">
-    <?php foreach ($tabs as $key => $label): ?>
-        <a href="<?= url('laporan', ['tab' => $key]) ?>" class="btn whitespace-nowrap <?= $tab === $key ? 'btn-primary' : 'btn-secondary' ?>"><?= e($label) ?></a>
-    <?php endforeach; ?>
-</div>
 
 <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
     <div class="flex flex-col md:flex-row gap-3 items-end justify-between">

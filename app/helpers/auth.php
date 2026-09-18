@@ -118,8 +118,7 @@ function menu_akses(string $page): bool
         return true;
     }
     if ($r === 'Petugas') {
-        return in_array($page, ['dashboard', 'penjualan', 'barang', 'pelanggan'], true);
+        return in_array($page, ['dashboard', 'penjualan', 'barang', 'kategori', 'pelanggan'], true);
     }
-    // Bendahara: semua kecuali halaman khusus administrator
     return !in_array($page, ['pengaturan', 'backup', 'log', 'profil', 'pengurus', 'pengguna'], true);
 }

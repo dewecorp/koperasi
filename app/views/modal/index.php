@@ -5,7 +5,6 @@ $jenis = [
     'pengurangan' => ['Pengurangan Modal', 'bg-red-100 text-red-700'],
 ];
 $modalTotal = (float)db()->query('SELECT COALESCE(SUM(CASE WHEN type="modal_awal" OR type="tambahan" THEN nominal WHEN type="pengurangan" THEN -nominal END),0) FROM capital_transactions WHERE status="AKTIF"')->fetchColumn();
-
 $hasEdit = has_role('Administrator') || has_role('Bendahara');
 ?>
 <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
@@ -17,7 +16,12 @@ $hasEdit = has_role('Administrator') || has_role('Bendahara');
                 <input type="text" name="q" value="<?= e($q) ?>" class="input pl-9" placeholder="Cari nomor / keterangan...">
             </div>
         </form>
-        <div class="text-sm font-medium">Total Modal Aktif: <b class="text-slate-800"><?= rupiah($modalTotal) ?></b></div>
+        <div class="flex items-center gap-3">
+            <div class="text-sm font-medium">Total Modal Aktif: <b class="text-slate-800"><?= rupiah($modalTotal) ?></b></div>
+            <?php if ($hasEdit): ?>
+                <button type="button" onclick="openCapitalModal()" class="btn btn-primary shrink-0"><?= icon('plus', 'w-4 h-4') ?> Catat Modal</button>
+            <?php endif; ?>
+        </div>
     </div>
 
     <div class="table-wrap">
@@ -51,34 +55,61 @@ $hasEdit = has_role('Administrator') || has_role('Bendahara');
 </div>
 
 <?php if ($hasEdit): ?>
+<div id="capitalModal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeCapitalModal()"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-slate-800">Catat Transaksi Modal</h3>
+                <button type="button" onclick="closeCapitalModal()" class="h-8 w-8 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500">&times;</button>
+            </div>
+            <p class="text-xs text-slate-500 mb-4"><b>Catatan:</b> Modal awal &amp; tambahan menambah kas. Pengurangan mengurangi kas. Pembatalan membalik efek otomatis.</p>
+            <form method="post" action="<?= url('modal', ['action' => 'store']) ?>" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <?= csrf_field() ?>
+                <div>
+                    <label class="label">Tanggal *</label>
+                    <input type="date" name="tanggal" id="capitalTanggal" class="input" value="<?= e(old('tanggal', date('Y-m-d'))) ?>" required max="9999-12-31">
+                </div>
+                <div>
+                    <label class="label">Jenis *</label>
+                    <select name="type" class="input">
+                        <option value="modal_awal" <?= old('type') === 'modal_awal' ? 'selected' : '' ?>>Modal Awal</option>
+                        <option value="tambahan" <?= old('type') === 'tambahan' || old('type') === '' ? 'selected' : '' ?>>Tambahan Modal</option>
+                        <option value="pengurangan" <?= old('type') === 'pengurangan' ? 'selected' : '' ?>>Pengurangan Modal</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="label">Nominal *</label>
+                    <input type="text" name="nominal" class="input" inputmode="numeric" min="1" step="0.01" value="<?= e(old('nominal')) ?>" required>
+                </div>
+                <div>
+                    <label class="label">Keterangan</label>
+                    <input type="text" name="keterangan" class="input" value="<?= e(old('keterangan')) ?>">
+                </div>
+                <div class="sm:col-span-2 flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeCapitalModal()" class="btn btn-secondary">Batal</button>
+                    <button type="submit" class="btn btn-primary"><?= icon('check', 'w-4 h-4') ?> Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+function openCapitalModal(){ document.getElementById('capitalModal').classList.remove('hidden'); setTimeout(function(){ var el=document.getElementById('capitalTanggal'); if(el) el.focus(); },50); }
+function closeCapitalModal(){ document.getElementById('capitalModal').classList.add('hidden'); }
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeCapitalModal(); });
+</script>
+<noscript>
 <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
     <h2 class="font-semibold text-slate-800 mb-4">Catat Transaksi Modal</h2>
-    <p class="text-xs text-slate-500 mb-4"><b>Catatan:</b> Modal awal &amp; tambahan modal menambah kas (tercatat di buku kas). Pengurangan modal mengurangi kas. Pembatalan membalik efek kas otomatis.</p>
     <form method="post" action="<?= url('modal', ['action' => 'store']) ?>" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <?= csrf_field() ?>
-        <div>
-            <label class="label">Tanggal *</label>
-            <input type="date" name="tanggal" class="input" value="<?= e(old('tanggal', date('Y-m-d'))) ?>" required max="9999-12-31">
-        </div>
-        <div>
-            <label class="label">Jenis *</label>
-            <select name="type" class="input">
-                <option value="modal_awal" <?= old('type') === 'modal_awal' ? 'selected' : '' ?>>Modal Awal</option>
-                <option value="tambahan" <?= old('type') === 'tambahan' || old('type') === '' ? 'selected' : '' ?>>Tambahan Modal</option>
-                <option value="pengurangan" <?= old('type') === 'pengurangan' ? 'selected' : '' ?>>Pengurangan Modal</option>
-            </select>
-        </div>
-        <div>
-            <label class="label">Nominal *</label>
-            <input type="text" name="nominal" class="input" inputmode="numeric" min="1" step="0.01" value="<?= e(old('nominal')) ?>" required>
-        </div>
-        <div>
-            <label class="label">Keterangan</label>
-            <input type="text" name="keterangan" class="input" value="<?= e(old('keterangan')) ?>">
-        </div>
-        <div class="sm:col-span-2 flex justify-end pt-2">
-            <button type="submit" class="btn btn-primary"><?= icon('check', 'w-4 h-4') ?> Simpan</button>
-        </div>
+        <div><label class="label">Tanggal *</label><input type="date" name="tanggal" class="input" value="<?= e(old('tanggal', date('Y-m-d'))) ?>" required></div>
+        <div><label class="label">Jenis *</label><select name="type" class="input"><option value="modal_awal">Modal Awal</option><option value="tambahan" selected>Tambahan Modal</option><option value="pengurangan">Pengurangan Modal</option></select></div>
+        <div><label class="label">Nominal *</label><input type="text" name="nominal" class="input" required></div>
+        <div><label class="label">Keterangan</label><input type="text" name="keterangan" class="input"></div>
+        <div class="sm:col-span-2 flex justify-end"><button type="submit" class="btn btn-primary">Simpan</button></div>
     </form>
 </div>
+</noscript>
 <?php endif; ?>

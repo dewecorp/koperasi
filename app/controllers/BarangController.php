@@ -41,11 +41,13 @@ class BarangController extends Controller
         $pg = paginate_data($countSql, $dataSql, $params, 'ORDER BY p.kode ASC', 20);
 
         $kategori = $pdo->query('SELECT * FROM categories WHERE type="barang" ORDER BY name')->fetchAll();
+        $supplierList = $pdo->query('SELECT * FROM suppliers WHERE is_active = 1 ORDER BY name')->fetchAll();
 
         $this->render('barang/index', [
             'pageTitle' => 'Data Barang',
             'pg' => $pg,
             'kategori' => $kategori,
+            'supplierList' => $supplierList,
             'q' => $q,
             'cat' => $cat,
             'status' => $status,

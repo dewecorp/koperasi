@@ -38,6 +38,21 @@ class PenjualanController extends Controller
                     WHERE ' . $whereSql;
         $pg = paginate_data($countSql, $dataSql, $params, 'ORDER BY t.id DESC', 20);
 
+        $produk = $pdo->query('SELECT p.*, c.name AS kategori FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.is_active = 1 ORDER BY p.name')->fetchAll();
+        $pelanggan = $pdo->query('SELECT * FROM customers WHERE is_active = 1 ORDER BY name')->fetchAll();
+        $detailsMap = [];
+        if (!empty($pg['items'])) {
+            $ids = array_column($pg['items'], 'id');
+            $ph = implode(',', array_fill(0, count($ids), '?'));
+            $stmt = $pdo->prepare('SELECT td.*, p.kode FROM transaction_details td JOIN products p ON p.id = td.product_id WHERE td.transaction_id IN (' . $ph . ') ORDER BY td.id');
+            $stmt->execute($ids);
+            foreach ($stmt->fetchAll() as $d) {
+                $tid = $d['transaction_id'];
+                if (!isset($detailsMap[$tid])) $detailsMap[$tid] = [];
+                $detailsMap[$tid][] = ['product_id' => (int)$d['product_id'], 'qty' => (int)$d['qty'], 'harga' => (float)$d['harga'], 'diskon' => (float)$d['diskon']];
+            }
+        }
+
         $this->render('penjualan/index', [
             'pageTitle' => $isHistory ? 'Riwayat Penjualan' : 'Penjualan',
             'pg' => $pg,
@@ -47,6 +62,9 @@ class PenjualanController extends Controller
             'q' => $q,
             'status' => $status,
             'isHistory' => $isHistory,
+            'produk' => $produk,
+            'pelanggan' => $pelanggan,
+            'detailsMap' => $detailsMap,
         ]);
     }
 

@@ -112,16 +112,6 @@ $hutang = $stmt->fetchAll();
             </div>
         </div>
 
-        <?php if (has_role('Administrator') && !$isBatal): ?>
-            <div class="bg-red-50 rounded-xl border border-red-200 p-5">
-                <h3 class="font-semibold text-red-700 mb-2">Pembatalan Transaksi</h3>
-                <p class="text-xs text-red-600 mb-3">Membatalkan akan mengembalikan stok dan membalik kas/hutang secara otomatis. Riwayat tetap tersimpan.</p>
-                <form method="post" action="<?= url('pembelian', ['action' => 'cancel', 'id' => $tx['id']]) ?>">
-                    <?= csrf_field() ?>
-                    <textarea name="alasan" class="input mb-2" rows="2" placeholder="Alasan pembatalan (wajib)..." required></textarea>
-                    <button type="submit" class="btn btn-danger w-full" onclick="return appConfirmSubmit(event, 'Batalkan transaksi ini? Efek kas/stok/hutang akan dibalik.')"><?= icon('x', 'w-4 h-4') ?> Batalkan Transaksi</button>
-                </form>
-            </div>
-        <?php endif; ?>
+
     </div>
 </div>

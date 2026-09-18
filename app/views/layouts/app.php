@@ -45,9 +45,13 @@ $navGroups = [
     ],
     'Barang' => [
         ['barang', 'barang', 'box', 'Data Barang'],
-        ['kategori', 'kategori', 'tag', 'Kategori'],
         ['supplier', 'supplier', 'truck', 'Supplier'],
         ['pelanggan', 'pelanggan', 'account-group', 'Pelanggan'],
+    ],
+    'Kategori' => [
+        ['kategori', 'kategori&type=barang', 'tag', 'Kategori Barang'],
+        ['kategori', 'kategori&type=pemasukan', 'account-group', 'Kategori Pemasukan'],
+        ['kategori', 'kategori&type=pengeluaran', 'account-group', 'Kategori Pengeluaran'],
     ],
     'Keuangan' => [
         ['kas', 'kas&tab=saldo', 'scale', 'Saldo Awal'],
@@ -129,22 +133,24 @@ if (has_role('Administrator')) {
                 $hrefParts = explode('&', $href);
                 $hrefPage = $hrefParts[0];
                 $hrefParams = [];
+                $curType = $_GET['type'] ?? '';
                 if (isset($hrefParts[1])) {
-                    if (strpos($hrefParts[1], 'action=') === 0) {
-                        $navAction = str_replace('action=', '', $hrefParts[1]);
-                        $hrefParams['action'] = $navAction;
-                    } else {
-                        $tab = str_replace('tab=', '', $hrefParts[1]);
-                        $hrefParams['tab'] = $tab;
+                    $parts = explode('&', $hrefParts[1]);
+                    foreach ($parts as $p) {
+                        if (strpos($p, 'type=') === 0) $hrefParams['type'] = substr($p, 5);
+                        elseif (strpos($p, 'action=') === 0) { $navAction = str_replace('action=', '', $p); $hrefParams['action'] = $navAction; }
+                        else { $tab = str_replace('tab=', '', $p); $hrefParams['tab'] = $tab; }
                     }
                 }
                 if ($hrefParts[0] === $currentPage) {
-                    if ($navAction !== null) {
+                    if (isset($hrefParams['type'])) {
+                        $active = ($curType !== '' && $curType === $hrefParams['type']);
+                    } elseif ($navAction !== null) {
                         $active = ($currentAction === $navAction);
                     } elseif ($tab !== null) {
                         $active = ($currentTab !== '' && $currentTab === $tab);
                     } else {
-                        $active = ($currentTab === '' && $currentAction !== 'history');
+                        $active = ($currentTab === '' && $currentAction !== 'history' && $curType === '');
                     }
                 }
                 ?>

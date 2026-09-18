@@ -38,6 +38,12 @@ class PembelianController extends Controller
                     WHERE ' . $whereSql;
         $pg = paginate_data($countSql, $dataSql, $params, 'ORDER BY t.id DESC', 20);
 
+        $produk = $pdo->query(
+            'SELECT p.*, c.name AS kategori FROM products p LEFT JOIN categories c ON c.id = p.category_id
+             WHERE p.is_active = 1 ORDER BY p.name'
+        )->fetchAll();
+        $supplier = $pdo->query('SELECT * FROM suppliers WHERE is_active = 1 ORDER BY name')->fetchAll();
+
         $this->render('pembelian/index', [
             'pageTitle' => $isHistory ? 'Riwayat Pembelian' : 'Pembelian',
             'pg' => $pg,
@@ -47,6 +53,8 @@ class PembelianController extends Controller
             'q' => $q,
             'status' => $status,
             'isHistory' => $isHistory,
+            'produk' => $produk,
+            'supplier' => $supplier,
         ]);
     }
 
