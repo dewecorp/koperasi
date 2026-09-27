@@ -84,6 +84,12 @@ function asset(string $path): string
     return $url;
 }
 
+/** URL QR Code untuk TTD / verifikasi. */
+function qrcode_url(string $data, int $size = 90): string
+{
+    return 'https://api.qrserver.com/v1/create-qr-code/?size=' . $size . 'x' . $size . '&data=' . rawurlencode($data);
+}
+
 /**
  * Path bersih permintaan saat ini (contoh: "barang", "transaksi/penjualan").
  * Bebas PATH_INFO: diturunkan dari REQUEST_URI sehingga kompatibel dengan

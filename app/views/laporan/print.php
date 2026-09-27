@@ -29,9 +29,9 @@ $isKas = $tab === 'kas';
     .summary { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
     .summary .box { border: 1px solid #94a3b8; border-radius: 6px; padding: 8px 14px; text-align: center; }
     .summary .box b { display: block; font-size: 13px; margin-top: 2px; }
-    .footer { margin-top: 40px; display: flex; justify-content: space-between; }
+    .footer { margin-top: 40px; display: flex; justify-content: space-between; page-break-inside: avoid; }
     .tandatangan { text-align: center; width: 220px; }
-    .tandatangan .spasi { height: 70px; }
+    .tandatangan img.qr-ttd { width: 85px; height: 85px; margin: 8px auto; display: block; border: 1px solid #cbd5e1; padding: 2px; border-radius: 4px; }
     .btn { position: fixed; top: 12px; right: 12px; padding: 8px 16px; background: #059669; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
     @media print { .btn { display: none; } .kertas { max-width: 100%; } }
 </style>
@@ -105,13 +105,27 @@ $isKas = $tab === 'kas';
     <div class="footer">
         <div class="tandatangan">
             <div>Mengetahui,<br>Kepala/<?= e($p['nama_koperasi']) ?></div>
-            <div class="spasi"></div>
-            <div>( <?= e($p['nama_ketua'] ?: '................') ?> )</div>
+            <?php
+            $qrKetua = "TTD DIGITAL - MENGETAHUI\n"
+                . "Koperasi: " . ($p['nama_koperasi'] ?? '') . "\n"
+                . "Ketua: " . ($p['nama_ketua'] ?: '-') . "\n"
+                . "Laporan: " . ($title ?? '') . "\n"
+                . "Tanggal: " . tanggal(date('Y-m-d'));
+            ?>
+            <img src="<?= e(qrcode_url($qrKetua)) ?>" class="qr-ttd" alt="QR TTD Ketua">
+            <div>( <b><?= e($p['nama_ketua'] ?: '................') ?></b> )</div>
         </div>
         <div class="tandatangan">
             <div>Dicetak <?= tanggal(date('Y-m-d')) ?> oleh <?= e($user['name'] ?? '') ?></div>
-            <div class="spasi"></div>
-            <div>( <?= e($p['nama_bendahara'] ?: '................') ?> )</div>
+            <?php
+            $qrBendahara = "TTD DIGITAL - BENDAHARA\n"
+                . "Koperasi: " . ($p['nama_koperasi'] ?? '') . "\n"
+                . "Bendahara: " . ($p['nama_bendahara'] ?: '-') . "\n"
+                . "Dicetak Oleh: " . ($user['name'] ?? '-') . "\n"
+                . "Tanggal: " . tanggal(date('Y-m-d'));
+            ?>
+            <img src="<?= e(qrcode_url($qrBendahara)) ?>" class="qr-ttd" alt="QR TTD Bendahara">
+            <div>( <b><?= e($p['nama_bendahara'] ?: '................') ?></b> )</div>
         </div>
     </div>
 </div>
